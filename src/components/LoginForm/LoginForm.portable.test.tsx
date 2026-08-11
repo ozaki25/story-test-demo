@@ -26,43 +26,25 @@ import * as stories from "./LoginForm.stories";
  *   使い方 A: Story の play 関数を jsdom でそのまま再実行する
  *   使い方 B: Story を「入力の定義」として再利用し、検証はテスト側に書く
  */
-const {
-  Default,
-  EmptySubmitShowsErrors,
-  ValidSubmitCallsOnSubmit,
-  InvalidEmailOnly,
-  InvalidPasswordOnly,
-  RecoverFromError,
-  Submitting,
-  SubmitSucceeds,
-  SubmitFails,
-  NoDoubleSubmit,
-} = composeStories(stories);
+const composed = composeStories(stories);
+const { Default } = composed;
 
 /**
  * 使い方 A。
  *
- * どの Story を jsdom 側でも回すかは選んでいる。全部を機械的に回すと、
- * 実ブラウザ側のスモークテストと内容が完全に重複するだけになる。
+ * ①（play 関数）を採用したうえで、実行環境として jsdom を選ぶ場合の書き方。
+ * ④は①の競合案ではなく、①の下位の選択肢にあたる。
  *
- * ここでは状態遷移（T1〜T6）とデシジョンテーブル（D1〜D4）を対象にした。
- * 開発中に何度も回したいのはこの層で、jsdom の速さが効くため。
+ * したがって Story を選り好みせず、**全 Story を機械的に回す**。
+ * 一部だけを回すと「jsdom だけで運用できるか」の判断ができなくなる。
  *
- * K1（キーボード操作）は入れていない。Tab 順やフォーカスの挙動は
- * 実ブラウザで確かめる意味が大きく、jsdom で通っても保証にならないため。
+ * K1（キーボード操作）も含めている。jsdom のフォーカスや Tab 順は
+ * user-event が実装した近似であって実ブラウザの挙動ではないが、
+ * 「書けるが保証は弱い」という事実そのものが比較材料になるため、
+ * 除外せずに実行して差を見えるようにしている。
  */
-describe("使い方A: Story の play 関数を jsdom で再実行する", () => {
-  test.each([
-    ["T1・D4 空送信で両方エラー", EmptySubmitShowsErrors],
-    ["T2 エラー後に修正して送信", RecoverFromError],
-    ["T3・D1 正常送信", ValidSubmitCallsOnSubmit],
-    ["T3 送信中", Submitting],
-    ["T4 送信成功", SubmitSucceeds],
-    ["T5 送信失敗", SubmitFails],
-    ["T6 二重送信の防止", NoDoubleSubmit],
-    ["D2 パスワードだけ不正", InvalidPasswordOnly],
-    ["D3 メールだけ不正", InvalidEmailOnly],
-  ])("%s", async (_name, Story) => {
+describe("使い方A: Story の play 関数を jsdom で再実行する（全 Story）", () => {
+  test.each(Object.entries(composed))("%s", async (_name, Story) => {
     await runStory(Story);
   });
 });
