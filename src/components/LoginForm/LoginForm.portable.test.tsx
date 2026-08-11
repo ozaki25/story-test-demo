@@ -1,13 +1,13 @@
-import { composeStories } from '@storybook/react';
-import { render, screen } from '@testing-library/react';
+import { composeStories } from "@storybook/react";
+import { render, screen } from "@testing-library/react";
 // userEvent と fn（スパイ）は @testing-library/user-event や vitest ではなく
 // storybook/test から取る。理由はファイル末尾の「テストユーティリティの import 元について」を参照。
-import { fn, userEvent } from 'storybook/test';
-import { describe, expect, test } from 'vitest';
+import { fn, userEvent } from "storybook/test";
+import { describe, expect, test } from "vitest";
 
-import { runStory } from '../../test/portable';
+import { runStory } from "@/test/portable";
 
-import * as stories from './LoginForm.stories';
+import * as stories from "./LoginForm.stories";
 
 /**
  * ============================================================
@@ -31,7 +31,7 @@ import * as stories from './LoginForm.stories';
 const { Default, EmptySubmitShowsErrors, ValidSubmitCallsOnSubmit, SubmittingDisablesForm } =
   composeStories(stories);
 
-describe('使い方A: Story の play 関数を jsdom で再実行する', () => {
+describe("使い方A: Story の play 関数を jsdom で再実行する", () => {
   /**
    * テストの中身をここには書いていない。検証はすべて Story 側の play 関数にある。
    *
@@ -42,52 +42,52 @@ describe('使い方A: Story の play 関数を jsdom で再実行する', () => 
    * 両方で走る。普段は速い jsdom で回し、CI では実ブラウザでも回す、といった
    * 使い分けができる。Story を 1 つ足せば、両方のテストが同時に増える。
    */
-  test('S1 空のまま送信するとエラーが出る', async () => {
+  test("S1 空のまま送信するとエラーが出る", async () => {
     await runStory(EmptySubmitShowsErrors);
   });
 
-  test('S2 正しく入力して送信すると onSubmit が呼ばれる', async () => {
+  test("S2 正しく入力して送信すると onSubmit が呼ばれる", async () => {
     await runStory(ValidSubmitCallsOnSubmit);
   });
 
-  test('S3 送信中はフォームが操作できない', async () => {
+  test("S3 送信中はフォームが操作できない", async () => {
     await runStory(SubmittingDisablesForm);
   });
 });
 
-describe('使い方B: Story を入力の定義として再利用し、検証はテスト側に書く', () => {
+describe("使い方B: Story を入力の定義として再利用し、検証はテスト側に書く", () => {
   /**
    * Story の args を土台にしつつ、props を上書きして検証を差し替える。
    * 「この検証は Storybook のカタログに載せるほどではない」ものを書く場所になる。
    */
-  test('S2 送信後もフォームの値は保持される', async () => {
+  test("S2 送信後もフォームの値は保持される", async () => {
     const onSubmit = fn();
     render(<Default onSubmit={onSubmit} />);
 
-    await userEvent.type(screen.getByLabelText('メールアドレス'), 'user@example.com');
-    await userEvent.type(screen.getByLabelText('パスワード'), 'password123');
-    await userEvent.click(screen.getByRole('button', { name: 'ログイン' }));
+    await userEvent.type(screen.getByLabelText("メールアドレス"), "user@example.com");
+    await userEvent.type(screen.getByLabelText("パスワード"), "password123");
+    await userEvent.click(screen.getByRole("button", { name: "ログイン" }));
 
     expect(onSubmit).toHaveBeenCalledWith({
-      email: 'user@example.com',
-      password: 'password123',
+      email: "user@example.com",
+      password: "password123",
     });
-    expect(screen.getByLabelText('メールアドレス')).toHaveValue('user@example.com');
+    expect(screen.getByLabelText("メールアドレス")).toHaveValue("user@example.com");
   });
 
-  test('エラー表示後に入力を直して再送信できる', async () => {
+  test("エラー表示後に入力を直して再送信できる", async () => {
     const onSubmit = fn();
     render(<Default onSubmit={onSubmit} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'ログイン' }));
-    expect(screen.getByText('メールアドレスを入力してください')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "ログイン" }));
+    expect(screen.getByText("メールアドレスを入力してください")).toBeInTheDocument();
 
-    await userEvent.type(screen.getByLabelText('メールアドレス'), 'user@example.com');
-    await userEvent.type(screen.getByLabelText('パスワード'), 'password123');
-    await userEvent.click(screen.getByRole('button', { name: 'ログイン' }));
+    await userEvent.type(screen.getByLabelText("メールアドレス"), "user@example.com");
+    await userEvent.type(screen.getByLabelText("パスワード"), "password123");
+    await userEvent.click(screen.getByRole("button", { name: "ログイン" }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText('メールアドレスを入力してください')).not.toBeInTheDocument();
+    expect(screen.queryByText("メールアドレスを入力してください")).not.toBeInTheDocument();
   });
 
   /**
@@ -97,9 +97,9 @@ describe('使い方B: Story を入力の定義として再利用し、検証は�
    * コンポーネントが増えてから気付くと原因の特定が面倒なので、
    * 配線そのものを検証するテストを 1 本置いている。
    */
-  test('preview.tsx の decorator が適用されている', () => {
+  test("preview.tsx の decorator が適用されている", () => {
     render(<Default />);
-    expect(screen.getByTestId('preview-frame')).toBeInTheDocument();
+    expect(screen.getByTestId("preview-frame")).toBeInTheDocument();
   });
 });
 

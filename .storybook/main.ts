@@ -1,21 +1,23 @@
-import type { StorybookConfig } from '@storybook/react-vite';
+import type { StorybookConfig } from "@storybook/react-vite";
 
 const config: StorybookConfig = {
   // ドキュメント（MDX）と Story を両方読み込む。
-  // MDX を先に並べることで、サイドバー上部に解説が来る。
-  stories: ['../src/docs/**/*.mdx', '../src/components/**/*.stories.@(ts|tsx)'],
+  // ディレクトリを限定せず src 配下すべてを対象にする。
+  // components/ に限定すると、別の場所に置いた Story が警告もなく無視される。
+  // サイドバーの並びは preview.tsx の storySort で明示している。
+  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(ts|tsx)"],
 
   addons: [
     // MDX ドキュメントと autodocs を有効にする
-    '@storybook/addon-docs',
+    "@storybook/addon-docs",
     // 手法③ a11y: Story ごとに axe を実行する
-    '@storybook/addon-a11y',
+    "@storybook/addon-a11y",
     // 手法①②: play 関数と全 Story スモークテストを Vitest で実行する
-    '@storybook/addon-vitest',
+    "@storybook/addon-vitest",
   ],
 
   framework: {
-    name: '@storybook/react-vite',
+    name: "@storybook/react-vite",
     options: {},
   },
 };

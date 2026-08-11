@@ -1,4 +1,4 @@
-import { Meta } from '@storybook/addon-docs/blocks';
+import { Meta } from "@storybook/addon-docs/blocks";
 
 <Meta title="解説/0. このリポジトリについて" />
 
@@ -14,23 +14,23 @@ React コンポーネントに Story を書き、その Story を土台にした
 
 `LoginForm` に対して、次の 3 つを固定しています。
 
-| ID | シナリオ |
-|---|---|
-| S1 | 空のまま送信するとエラーメッセージが出る |
-| S2 | 正しく入力して送信すると `onSubmit` が正しい値で呼ばれる |
-| S3 | 送信中はフォームが操作できない |
+| ID  | シナリオ                                                 |
+| --- | -------------------------------------------------------- |
+| S1  | 空のまま送信するとエラーメッセージが出る                 |
+| S2  | 正しく入力して送信すると `onSubmit` が正しい値で呼ばれる |
+| S3  | 送信中はフォームが操作できない                           |
 
 同じことをやらせているので、記述量・読みやすさ・実行速度・壊れやすさを直接比較できます。
 
 ## 収録している手法
 
-| # | 手法 | 実行環境 | 書く場所 |
-|---|---|---|---|
-| ① | `play` 関数 | 実ブラウザ | `*.stories.tsx` |
-| ② | 全 Story のスモークテスト | 実ブラウザ | 書かなくてよい（Story を書けば増える） |
-| ③ | a11y（axe） | 実ブラウザ | `parameters.a11y` |
-| ④ | Portable Stories | jsdom | `*.portable.test.tsx` |
-| 対照群 | 素の Testing Library | jsdom | `*.plain.test.tsx` |
+| #      | 手法                      | 実行環境   | 書く場所                               |
+| ------ | ------------------------- | ---------- | -------------------------------------- |
+| ①      | `play` 関数               | 実ブラウザ | `*.stories.tsx`                        |
+| ②      | 全 Story のスモークテスト | 実ブラウザ | 書かなくてよい（Story を書けば増える） |
+| ③      | a11y（axe）               | 実ブラウザ | `parameters.a11y`                      |
+| ④      | Portable Stories          | jsdom      | `*.portable.test.tsx`                  |
+| 対照群 | 素の Testing Library      | jsdom      | `*.plain.test.tsx`                     |
 
 2026 年 8 月時点で、本番で採用しうるものだけに絞っています。
 Storybook 8 で削除された storyshots、更新の止まっている vitest-axe、
@@ -49,18 +49,25 @@ src/components/LoginForm/
   index.ts
 ```
 
+`Button` も同じ構成です。同じ規約が 2 つのコンポーネントで揃っているので、
+3 つ目を足すときに何を書けばよいかが構成から読み取れます。
+
 手法別にディレクトリを切る構成（`tests/play/`, `tests/portable/`）は採っていません。
 コンポーネントが増えたときに、1 つのコンポーネントの情報が複数の場所に散るためです。
-サフィックスを全コンポーネントで統一しているので、
-`src/**/*.portable.test.tsx` のような glob で手法単位の横断実行もできます。
 
 ## テストの実行
 
 ```bash
-npm run test          # 全部
-npm run test:stories  # 実ブラウザ（①②③）
-npm run test:unit     # jsdom（④と対照群）
+npm run test           # 全部
+npm run test:stories   # 実ブラウザ（①②③）
+npm run test:unit      # jsdom（④と対照群）
+npm run test:portable  # 手法④だけ
+npm run test:plain     # 対照群だけ
 ```
 
 Vitest の project を実行環境で分けているので、片方だけを回せます。
 CI での並列化や部分実行がしやすくなります。
+
+手法単位の実行は、収集条件ではなく実行時のファイル名で絞っています。
+`include` を手法別サフィックスで絞ると、規約から外れた名前のテストが
+警告もなく無視されるためです（「解説 / 5. 落とし穴」を参照）。

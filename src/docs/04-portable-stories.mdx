@@ -1,4 +1,4 @@
-import { Meta } from '@storybook/addon-docs/blocks';
+import { Meta } from "@storybook/addon-docs/blocks";
 
 <Meta title="解説/4. Portable Stories" />
 
@@ -10,7 +10,7 @@ args・decorators・parameters が適用された状態で、jsdom のテスト�
 
 対象ファイル: `src/components/LoginForm/LoginForm.portable.test.tsx`
 
-ブラウザを起動しないので実行が速く（このリポジトリでは jsdom 2.8 秒に対し実ブラウザ 13 秒）、
+ブラウザを起動しないので実行が速く（このリポジトリでは jsdom 3.1 秒 / 28 件に対し、実ブラウザ 6.0 秒 / 13 件）、
 そのぶんレイアウトや実ブラウザ固有の挙動は検証できません。
 
 ## 使い方 A: Story の play 関数を再実行する
@@ -20,7 +20,7 @@ args・decorators・parameters が適用された状態で、jsdom のテスト�
 ```tsx
 const { EmptySubmitShowsErrors } = composeStories(stories);
 
-test('S1 空のまま送信するとエラーが出る', async () => {
+test("S1 空のまま送信するとエラーが出る", async () => {
   await runStory(EmptySubmitShowsErrors);
 });
 ```
@@ -30,14 +30,19 @@ test('S1 空のまま送信するとエラーが出る', async () => {
 
 `runStory` は `src/test/portable.ts` の小さなヘルパーです。
 Story の `run()`（描画と play の実行をまとめて行う）を、
-テストごとに独立したコンテナで呼び、後始末までを引き受けます。
+テストごとに独立したコンテナで呼びます。
+
+後始末は同じファイルの `cleanupStories()` として公開し、登録は
+`src/test/setup.unit.ts` の `afterEach` で行っています。
+import しただけで `afterEach` が登録される作りにはしていません。
+import に副作用があると、テスト以外から読み込んだときに壊れるためです。
 
 ## 使い方 B: Story を入力の定義として再利用する
 
 Story の args を土台に、props を上書きして検証をテスト側に書きます。
 
 ```tsx
-test('S2 送信後もフォームの値は保持される', async () => {
+test("S2 送信後もフォームの値は保持される", async () => {
   const onSubmit = vi.fn();
   render(<Default onSubmit={onSubmit} />);
   // ... 検証はここに書く

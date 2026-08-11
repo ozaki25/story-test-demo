@@ -1,6 +1,6 @@
-import { useId, useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from "react";
 
-import { Button } from '../Button';
+import { Button } from "../Button";
 
 export interface LoginFormValues {
   email: string;
@@ -27,14 +27,14 @@ const PASSWORD_MIN_LENGTH = 8;
 export function validateLoginForm(values: LoginFormValues): LoginFormErrors {
   const errors: LoginFormErrors = {};
 
-  if (values.email.trim() === '') {
-    errors.email = 'メールアドレスを入力してください';
+  if (values.email.trim() === "") {
+    errors.email = "メールアドレスを入力してください";
   } else if (!EMAIL_PATTERN.test(values.email)) {
-    errors.email = 'メールアドレスの形式が正しくありません';
+    errors.email = "メールアドレスの形式が正しくありません";
   }
 
-  if (values.password === '') {
-    errors.password = 'パスワードを入力してください';
+  if (values.password === "") {
+    errors.password = "パスワードを入力してください";
   } else if (values.password.length < PASSWORD_MIN_LENGTH) {
     errors.password = `パスワードは${PASSWORD_MIN_LENGTH}文字以上で入力してください`;
   }
@@ -53,7 +53,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
   const emailId = `${id}-email`;
   const passwordId = `${id}-password`;
 
-  const [values, setValues] = useState<LoginFormValues>({ email: '', password: '' });
+  const [values, setValues] = useState<LoginFormValues>({ email: "", password: "" });
   const [errors, setErrors] = useState<LoginFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -80,13 +80,18 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
     // ブラウザ標準のバリデーションが submit を止めてしまい、
     // 自前のエラー表示まで到達しない。jsdom では標準バリデーションが動かないため、
     // 付け忘れると「jsdom では通るのにブラウザでは落ちる」という差になって現れる。
-    <form className="login-form" onSubmit={handleSubmit} noValidate aria-label="ログイン">
-      <div className="login-form__field">
-        <label className="login-form__label" htmlFor={emailId}>
+    <form
+      className="flex max-w-xs flex-col gap-4"
+      onSubmit={handleSubmit}
+      noValidate
+      aria-label="ログイン"
+    >
+      <div className="flex flex-col gap-1">
+        <label className="text-xs font-semibold" htmlFor={emailId}>
           メールアドレス
         </label>
         <input
-          className="login-form__input"
+          className="rounded-md border border-slate-300 px-2.5 py-2 text-sm aria-invalid:border-red-700"
           id={emailId}
           name="email"
           type="email"
@@ -98,18 +103,18 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
           disabled={isSubmitting}
         />
         {errors.email !== undefined && (
-          <p className="login-form__error" id={`${emailId}-error`} role="alert">
+          <p className="text-xs text-red-700" id={`${emailId}-error`} role="alert">
             {errors.email}
           </p>
         )}
       </div>
 
-      <div className="login-form__field">
-        <label className="login-form__label" htmlFor={passwordId}>
+      <div className="flex flex-col gap-1">
+        <label className="text-xs font-semibold" htmlFor={passwordId}>
           パスワード
         </label>
         <input
-          className="login-form__input"
+          className="rounded-md border border-slate-300 px-2.5 py-2 text-sm aria-invalid:border-red-700"
           id={passwordId}
           name="password"
           type="password"
@@ -121,7 +126,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
           disabled={isSubmitting}
         />
         {errors.password !== undefined && (
-          <p className="login-form__error" id={`${passwordId}-error`} role="alert">
+          <p className="text-xs text-red-700" id={`${passwordId}-error`} role="alert">
             {errors.password}
           </p>
         )}

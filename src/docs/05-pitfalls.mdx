@@ -1,4 +1,4 @@
-import { Meta } from '@storybook/addon-docs/blocks';
+import { Meta } from "@storybook/addon-docs/blocks";
 
 <Meta title="解説/5. 落とし穴" />
 
@@ -78,3 +78,59 @@ Portable Stories を採用するなら、プロジェクト全体で
 
 同じ Story を両方の環境で走らせていると、この種の食い違いが早期に見つかります。
 これは手法を重ねることの実利のひとつです。
+
+## 6. テストの収集条件を手法別サフィックスで絞ると、テストが黙って消える
+
+**症状**: テストを書いたのに実行されない。しかも全体は緑のまま。
+
+**原因**: Vitest の `include` を手法別のサフィックスで絞っていた。
+
+```ts
+// これをやってはいけない
+include: ["src/**/*.{portable,plain}.test.{ts,tsx}"];
+```
+
+この状態で `Button.test.tsx` という名前のファイルを作ると、
+中身が何であれ収集対象から外れます。エラーも警告も出ません。
+
+実際に必ず失敗するテストを置いて確認しました。
+
+```
+npm run test:unit → Test Files 2 passed, Tests 14 passed
+npm test          → Test Files 4 passed, Tests 27 passed
+```
+
+命名規約は人間が守るものなので、破られたときに気付ける形にしておく必要があります。
+収集は `src/**/*.test.{ts,tsx}` で広く行い、手法単位の実行は
+コマンド側で絞る（`npm run test:portable`）のが安全です。
+
+規約から外れたファイルは「実行されない」のではなく「実行されて落ちる」ほうがましです。
+
+## 7. 手法④はリンタから見るとアサーションのないテストに見える
+
+**症状**: `vitest(expect-expect): Test has no assertions`
+
+Portable Stories で play 関数を再実行する書き方では、
+検証が Story 側にあるためテストファイルに `expect` が現れません。
+リンタからは空のテストに見えます。
+
+```ts
+test("S1 空のまま送信するとエラーが出る", async () => {
+  await runStory(EmptySubmitShowsErrors);
+});
+```
+
+**対策**: `runStory` をアサーション関数として認識させます（`.oxlintrc.json`）。
+
+```json
+{
+  "files": ["**/*.portable.test.tsx"],
+  "rules": {
+    "vitest/expect-expect": ["error", { "assertFunctionNames": ["expect", "runStory"] }]
+  }
+}
+```
+
+手法を採用すると周辺のツール設定にも影響が出る、という一例です。
+ルールを黙って全体で無効化すると、本当に空のテストも見逃すようになります。
+対象ファイルと関数名を限定しておくのが要点です。

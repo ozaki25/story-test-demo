@@ -1,4 +1,4 @@
-import { Meta } from '@storybook/addon-docs/blocks';
+import { Meta } from "@storybook/addon-docs/blocks";
 
 <Meta title="解説/6. 比較と使い分け" />
 
@@ -8,26 +8,27 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 ## 一覧
 
-| | ① play 関数 | ② スモーク | ③ a11y | ④ Portable Stories | 対照群 素の TL |
-|---|---|---|---|---|---|
-| 実行環境 | 実ブラウザ | 実ブラウザ | 実ブラウザ | jsdom | jsdom |
-| テストを書く場所 | `*.stories.tsx` | 書かない | `parameters` | `*.portable.test.tsx` | `*.plain.test.tsx` |
-| Storybook にカタログが残る | 残る | 残る | 残る | 残る（Story 側） | 残らない |
-| 実ブラウザ固有の挙動 | 検証できる | 検証できる | 検証できる | 検証できない | 検証できない |
-| 追加コスト | 中 | ほぼゼロ | ほぼゼロ | 小 | 中 |
-| 速度 | 遅い | 遅い | 遅い | 速い | 速い |
+|                            | ① play 関数     | ② スモーク | ③ a11y       | ④ Portable Stories    | 対照群 素の TL     |
+| -------------------------- | --------------- | ---------- | ------------ | --------------------- | ------------------ |
+| 実行環境                   | 実ブラウザ      | 実ブラウザ | 実ブラウザ   | jsdom                 | jsdom              |
+| テストを書く場所           | `*.stories.tsx` | 書かない   | `parameters` | `*.portable.test.tsx` | `*.plain.test.tsx` |
+| Storybook にカタログが残る | 残る            | 残る       | 残る         | 残る（Story 側）      | 残らない           |
+| 実ブラウザ固有の挙動       | 検証できる      | 検証できる | 検証できる   | 検証できない          | 検証できない       |
+| 追加コスト                 | 中              | ほぼゼロ   | ほぼゼロ     | 小                    | 中                 |
+| 速度                       | 遅い            | 遅い       | 遅い         | 速い                  | 速い               |
 
 ## 実測値
 
 このリポジトリでの実行時間です。規模が小さいので絶対値ではなく比率を見てください。
 
-| project | 件数 | 時間 | 内訳 |
-|---|---|---|---|
-| storybook（実ブラウザ） | 13 | 13.1 秒 | うちセットアップ 7.8 秒 |
-| unit（jsdom） | 14 | 2.8 秒 | うちセットアップ 0.9 秒 |
+| project                 | 件数 | 時間   | 内訳                    |
+| ----------------------- | ---- | ------ | ----------------------- |
+| storybook（実ブラウザ） | 13   | 6.0 秒 | うちセットアップ 4.1 秒 |
+| unit（jsdom）           | 28   | 3.1 秒 | うちセットアップ 1.4 秒 |
 
-実ブラウザ側は起動コストが支配的です。件数に対しては緩やかに伸びるので、
-Story が増えたときに 5 倍の差がそのまま広がるわけではありません。
+実ブラウザ側は起動コストが支配的です（6.0 秒のうち 4.1 秒）。
+件数に対しては緩やかに伸びるので、Story が増えても差がそのまま広がるわけではありません。
+逆に言うと、テストが少ないうちは実ブラウザ側の遅さが目立ちます。
 
 ## 記述量の比較（シナリオ S3）
 
@@ -38,14 +39,16 @@ Story が増えたときに 5 倍の差がそのまま広がるわけではあ�
 ```tsx
 export const SubmittingDisablesForm: Story = {
   args: { onSubmit: fn(() => new Promise<void>(() => {})) },
-  play: async ({ canvas, userEvent, step }) => { /* 操作と検証 */ },
+  play: async ({ canvas, userEvent, step }) => {
+    /* 操作と検証 */
+  },
 };
 ```
 
 **④ Portable Stories（使い方 A）**: 上の Story をそのまま再利用します。書くのは 1 行です。
 
 ```tsx
-test('S3 送信中はフォームが操作できない', async () => {
+test("S3 送信中はフォームが操作できない", async () => {
   await runStory(SubmittingDisablesForm);
 });
 ```

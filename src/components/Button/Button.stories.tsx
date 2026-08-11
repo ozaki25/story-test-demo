@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { Button } from './Button';
+import { Button } from "./Button";
 
 /**
  * ============================================================
@@ -21,14 +21,14 @@ import { Button } from './Button';
  * Story を 1 つ足すだけでテストが 1 つ増える、という関係になる。
  */
 const meta = {
-  title: 'components/Button',
+  title: "components/Button",
   component: Button,
   args: {
-    children: 'ボタン',
+    children: "ボタン",
   },
   argTypes: {
-    variant: { control: 'inline-radio', options: ['primary', 'secondary', 'danger'] },
-    size: { control: 'inline-radio', options: ['sm', 'md', 'lg'] },
+    variant: { control: "inline-radio", options: ["primary", "secondary", "danger"] },
+    size: { control: "inline-radio", options: ["sm", "md", "lg"] },
   },
 } satisfies Meta<typeof Button>;
 
@@ -37,36 +37,36 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
-  name: 'プライマリ',
+  name: "プライマリ",
 };
 
 export const Secondary: Story = {
-  name: 'セカンダリ',
-  args: { variant: 'secondary' },
+  name: "セカンダリ",
+  args: { variant: "secondary" },
 };
 
 export const Danger: Story = {
-  name: '危険な操作',
-  args: { variant: 'danger' },
+  name: "危険な操作",
+  args: { variant: "danger" },
 };
 
 export const Small: Story = {
-  name: 'サイズ小',
-  args: { size: 'sm' },
+  name: "サイズ小",
+  args: { size: "sm" },
 };
 
 export const Large: Story = {
-  name: 'サイズ大',
-  args: { size: 'lg' },
+  name: "サイズ大",
+  args: { size: "lg" },
 };
 
 export const Disabled: Story = {
-  name: '無効',
+  name: "無効",
   args: { disabled: true },
 };
 
 export const Loading: Story = {
-  name: '処理中',
+  name: "処理中",
   args: { loading: true },
 };
 
@@ -84,11 +84,11 @@ export const Loading: Story = {
  * 逃げ道ではなく、返済対象を可視化するための仕組みとして使う。
  */
 export const IconOnlyWithoutLabel: Story = {
-  name: 'アイコンのみ（a11y違反を todo として許容）',
+  name: "アイコンのみ（a11y違反を todo として許容）",
   args: {
     children: <span aria-hidden="true">✕</span>,
   },
   parameters: {
-    a11y: { test: 'todo' },
+    a11y: { test: "todo" },
   },
 };

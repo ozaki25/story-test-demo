@@ -1,4 +1,4 @@
-import { Meta } from '@storybook/addon-docs/blocks';
+import { Meta } from "@storybook/addon-docs/blocks";
 
 <Meta title="解説/1. play 関数" />
 
@@ -14,14 +14,14 @@ Storybook の UI 上ではインタラクションが再生され、
 
 ```tsx
 export const EmptySubmitShowsErrors: Story = {
-  name: 'S1 空のまま送信するとエラーが出る',
+  name: "S1 空のまま送信するとエラーが出る",
   play: async ({ canvas, userEvent, args, step }) => {
-    await step('空のままログインボタンを押す', async () => {
-      await userEvent.click(canvas.getByRole('button', { name: 'ログイン' }));
+    await step("空のままログインボタンを押す", async () => {
+      await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
     });
 
-    await step('両方の項目にエラーが表示される', async () => {
-      await expect(await canvas.findByText('メールアドレスを入力してください')).toBeInTheDocument();
+    await step("両方の項目にエラーが表示される", async () => {
+      await expect(await canvas.findByText("メールアドレスを入力してください")).toBeInTheDocument();
     });
   },
 };

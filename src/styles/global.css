@@ -1,101 +1,17 @@
-:root {
-  --color-text: #1f2933;
-  --color-muted: #6b7280;
-  --color-border: #d1d5db;
-  --color-danger: #b42318;
-  --color-primary: #1d4ed8;
-  --color-primary-hover: #1e40af;
+@import "tailwindcss";
 
-  font-family: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
-  color: var(--color-text);
-}
-
-.sb-preview-frame {
-  padding: 16px;
+/*
+ * Tailwind v4 の設定は CSS 側に書く。tailwind.config.js は使わない。
+ * Vite プラグイン（@tailwindcss/vite）を vite.config.ts に入れてあるので、
+ * Storybook もテストも同じ設定を読む。
+ */
+@theme {
+  --font-sans: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
 }
 
-/* Button */
-.btn {
-  border: 1px solid transparent;
-  border-radius: 6px;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.btn--sm {
-  padding: 4px 10px;
-  font-size: 13px;
-}
-.btn--md {
-  padding: 8px 16px;
-  font-size: 14px;
-}
-.btn--lg {
-  padding: 12px 22px;
-  font-size: 16px;
-}
-
-.btn--primary {
-  background: var(--color-primary);
-  color: #fff;
-}
-.btn--primary:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-}
-
-.btn--secondary {
-  background: #fff;
-  border-color: var(--color-border);
-  color: var(--color-text);
-}
-.btn--secondary:hover:not(:disabled) {
-  background: #f3f4f6;
-}
-
-.btn--danger {
-  background: var(--color-danger);
-  color: #fff;
-}
-
-/* LoginForm */
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 320px;
-}
-
-.login-form__field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.login-form__label {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.login-form__input {
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font: inherit;
-  font-size: 14px;
-  padding: 8px 10px;
-}
-
-.login-form__input[aria-invalid='true'] {
-  border-color: var(--color-danger);
-}
-
-.login-form__error {
-  color: var(--color-danger);
-  font-size: 12px;
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-slate-800);
+  }
 }

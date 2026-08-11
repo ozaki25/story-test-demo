@@ -1,5 +1,3 @@
-import { afterEach } from 'vitest';
-
 /**
  * Portable Stories の run() をテストから使うための小さなヘルパー。
  *
@@ -11,6 +9,10 @@ import { afterEach } from 'vitest';
  *
  * テストごとに独立したコンテナを渡し、後始末までを引き受けることでこれを防ぐ。
  * Story とテストが増えても互いに干渉しない。
+ *
+ * 後始末は cleanupStories() として公開し、登録は src/test/setup.unit.ts で行う。
+ * このモジュールを import しただけで afterEach が登録される作りにはしていない。
+ * import に副作用があると、テスト以外から読み込んだときに壊れるため。
  */
 type RunnableStory = {
   run: (context?: { canvasElement?: HTMLElement }) => Promise<void>;
@@ -18,24 +20,25 @@ type RunnableStory = {
 
 const mountedCanvases = new Set<HTMLElement>();
 
-afterEach(() => {
-  for (const canvas of mountedCanvases) {
-    canvas.remove();
-  }
-  mountedCanvases.clear();
-});
-
 /**
  * Story を独立したコンテナに描画し、その play 関数を実行する。
  *
  * @returns 描画先のコンテナ。追加で検証したいときに within() の対象として使える。
  */
 export async function runStory(story: RunnableStory): Promise<HTMLElement> {
-  const canvasElement = document.createElement('div');
+  const canvasElement = document.createElement("div");
   document.body.appendChild(canvasElement);
   mountedCanvases.add(canvasElement);
 
   await story.run({ canvasElement });
 
   return canvasElement;
+}
+
+/** runStory が作ったコンテナをすべて取り除く。setup ファイルから afterEach で呼ぶ。 */
+export function cleanupStories(): void {
+  for (const canvas of mountedCanvases) {
+    canvas.remove();
+  }
+  mountedCanvases.clear();
 }

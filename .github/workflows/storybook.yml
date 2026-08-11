@@ -9,8 +9,9 @@ on:
 permissions:
   contents: read
 
+# テストは新しい push が来たら打ち切ってよい。
 concurrency:
-  group: pages-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -23,7 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
 
       - run: npm ci
@@ -31,6 +32,10 @@ jobs:
       # storybook project は Chromium を実際に起動する。
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+
+      - run: npm run lint
+
+      - run: npm run format:check
 
       - run: npm run typecheck
 
@@ -42,6 +47,12 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     needs: test
     runs-on: ubuntu-latest
+
+    # デプロイは進行中のものを打ち切らない。
+    # 途中で止めると Pages が中途半端な状態で残ることがある。
+    concurrency:
+      group: pages
+      cancel-in-progress: false
 
     permissions:
       pages: write
@@ -56,7 +67,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
 
       - run: npm ci

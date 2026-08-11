@@ -1,9 +1,11 @@
-import { setProjectAnnotations } from '@storybook/react';
-import { cleanup } from '@testing-library/react';
-import '@testing-library/jest-dom/vitest';
-import { afterEach, beforeAll } from 'vitest';
+import { setProjectAnnotations } from "@storybook/react";
+import { cleanup } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
+import { afterEach, beforeAll } from "vitest";
 
-import * as previewAnnotations from '../../.storybook/preview';
+import * as previewAnnotations from "../../.storybook/preview";
+
+import { cleanupStories } from "./portable";
 
 /**
  * unit project（jsdom）のセットアップ。
@@ -28,10 +30,10 @@ import * as previewAnnotations from '../../.storybook/preview';
  * 環境差はここ 1 箇所で吸収し、Story は標準の書き方（play の引数から受け取る）に統一する。
  */
 if (!globalThis.navigator.clipboard) {
-  Object.defineProperty(globalThis.navigator, 'clipboard', {
+  Object.defineProperty(globalThis.navigator, "clipboard", {
     value: {
       read: async () => [],
-      readText: async () => '',
+      readText: async () => "",
       write: async () => {},
       writeText: async () => {},
     },
@@ -58,5 +60,11 @@ beforeAll(annotations.beforeAll);
  * Testing Library は globals: true のときだけ afterEach を自動登録するため、
  * この設定では明示的に呼ぶ必要がある。忘れると前のテストの DOM が残り、
  * 「Found multiple elements」で落ちる。
+ *
+ * cleanup       … render() が作ったコンテナを片付ける
+ * cleanupStories … runStory() が作ったコンテナを片付ける
  */
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  cleanupStories();
+});

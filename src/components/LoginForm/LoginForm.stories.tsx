@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn } from 'storybook/test';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, fn } from "storybook/test";
 
-import { LoginForm } from './LoginForm';
+import { LoginForm } from "./LoginForm";
 
 /**
  * ============================================================
@@ -27,7 +27,7 @@ import { LoginForm } from './LoginForm';
  *   ・LoginForm.plain.test.tsx    （対照群 素の Testing Library / jsdom）
  */
 const meta = {
-  title: 'components/LoginForm',
+  title: "components/LoginForm",
   component: LoginForm,
   args: {
     // fn() は storybook/test のスパイ。
@@ -46,25 +46,25 @@ type Story = StoryObj<typeof meta>;
  * Storybook のサイドバーから見たときの「初期表示はこれ」というカタログも兼ねる。
  */
 export const Default: Story = {
-  name: '初期表示',
+  name: "初期表示",
 };
 
 /**
  * シナリオ S1: 空のまま submit するとエラーメッセージが出る。
  */
 export const EmptySubmitShowsErrors: Story = {
-  name: 'S1 空のまま送信するとエラーが出る',
+  name: "S1 空のまま送信するとエラーが出る",
   play: async ({ canvas, userEvent, args, step }) => {
-    await step('空のままログインボタンを押す', async () => {
-      await userEvent.click(canvas.getByRole('button', { name: 'ログイン' }));
+    await step("空のままログインボタンを押す", async () => {
+      await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
     });
 
-    await step('両方の項目にエラーが表示される', async () => {
-      await expect(await canvas.findByText('メールアドレスを入力してください')).toBeInTheDocument();
-      await expect(canvas.getByText('パスワードを入力してください')).toBeInTheDocument();
+    await step("両方の項目にエラーが表示される", async () => {
+      await expect(await canvas.findByText("メールアドレスを入力してください")).toBeInTheDocument();
+      await expect(canvas.getByText("パスワードを入力してください")).toBeInTheDocument();
     });
 
-    await step('送信は行われない', async () => {
+    await step("送信は行われない", async () => {
       await expect(args.onSubmit).not.toHaveBeenCalled();
     });
   },
@@ -74,21 +74,21 @@ export const EmptySubmitShowsErrors: Story = {
  * シナリオ S2: 正しく入力して submit すると onSubmit が正しい値で呼ばれる。
  */
 export const ValidSubmitCallsOnSubmit: Story = {
-  name: 'S2 正しく入力して送信すると onSubmit が呼ばれる',
+  name: "S2 正しく入力して送信すると onSubmit が呼ばれる",
   play: async ({ canvas, userEvent, args, step }) => {
-    await step('フォームを入力する', async () => {
-      await userEvent.type(canvas.getByLabelText('メールアドレス'), 'user@example.com');
-      await userEvent.type(canvas.getByLabelText('パスワード'), 'password123');
+    await step("フォームを入力する", async () => {
+      await userEvent.type(canvas.getByLabelText("メールアドレス"), "user@example.com");
+      await userEvent.type(canvas.getByLabelText("パスワード"), "password123");
     });
 
-    await step('ログインボタンを押す', async () => {
-      await userEvent.click(canvas.getByRole('button', { name: 'ログイン' }));
+    await step("ログインボタンを押す", async () => {
+      await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
     });
 
-    await step('入力値がそのまま onSubmit に渡る', async () => {
+    await step("入力値がそのまま onSubmit に渡る", async () => {
       await expect(args.onSubmit).toHaveBeenCalledWith({
-        email: 'user@example.com',
-        password: 'password123',
+        email: "user@example.com",
+        password: "password123",
       });
     });
   },
@@ -102,21 +102,21 @@ export const ValidSubmitCallsOnSubmit: Story = {
  * args でコンポーネントの外側を差し替えられる Storybook の書き方の利点。
  */
 export const SubmittingDisablesForm: Story = {
-  name: 'S3 送信中はフォームが操作できない',
+  name: "S3 送信中はフォームが操作できない",
   args: {
     onSubmit: fn(() => new Promise<void>(() => {})),
   },
   play: async ({ canvas, userEvent, step }) => {
-    await step('正しい値を入力して送信する', async () => {
-      await userEvent.type(canvas.getByLabelText('メールアドレス'), 'user@example.com');
-      await userEvent.type(canvas.getByLabelText('パスワード'), 'password123');
-      await userEvent.click(canvas.getByRole('button', { name: 'ログイン' }));
+    await step("正しい値を入力して送信する", async () => {
+      await userEvent.type(canvas.getByLabelText("メールアドレス"), "user@example.com");
+      await userEvent.type(canvas.getByLabelText("パスワード"), "password123");
+      await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
     });
 
-    await step('ボタンが送信中の表示になり、入力欄も無効になる', async () => {
-      await expect(await canvas.findByRole('button', { name: '送信中…' })).toBeDisabled();
-      await expect(canvas.getByLabelText('メールアドレス')).toBeDisabled();
-      await expect(canvas.getByLabelText('パスワード')).toBeDisabled();
+    await step("ボタンが送信中の表示になり、入力欄も無効になる", async () => {
+      await expect(await canvas.findByRole("button", { name: "送信中…" })).toBeDisabled();
+      await expect(canvas.getByLabelText("メールアドレス")).toBeDisabled();
+      await expect(canvas.getByLabelText("パスワード")).toBeDisabled();
     });
   },
 };
@@ -130,14 +130,14 @@ export const SubmittingDisablesForm: Story = {
  * この二重取りが、Story を経由してテストを書く一番の動機になる。
  */
 export const InvalidEmailFormat: Story = {
-  name: 'メールアドレスの形式が不正',
+  name: "メールアドレスの形式が不正",
   play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByLabelText('メールアドレス'), 'not-an-email');
-    await userEvent.type(canvas.getByLabelText('パスワード'), 'password123');
-    await userEvent.click(canvas.getByRole('button', { name: 'ログイン' }));
+    await userEvent.type(canvas.getByLabelText("メールアドレス"), "not-an-email");
+    await userEvent.type(canvas.getByLabelText("パスワード"), "password123");
+    await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
 
     await expect(
-      await canvas.findByText('メールアドレスの形式が正しくありません'),
+      await canvas.findByText("メールアドレスの形式が正しくありません"),
     ).toBeInTheDocument();
   },
 };
