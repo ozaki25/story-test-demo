@@ -77,30 +77,46 @@ describe("LoginForm（Story を使わない素の Testing Library）", () => {
 });
 
 /**
- * バリデーション規則そのもののテスト。
+ * ============================================================
+ * V1〜V8: 同値分割と境界値分析
+ * ============================================================
  *
- * これは Story にする意味がない。描画を伴わないし、カタログに載せるべき状態でもない。
- * 規則の組み合わせを網羅したいだけなら、こちらのほうが速く、読みやすく、壊れにくい。
+ * ここは描画を伴わない。Story にしても見て確認する価値がないので、
+ * 関数として切り出して普通の単体テストで網羅する。
  *
- * 「何でも Story 経由にする」のではなく、こういう層は素直に関数として切り出して
- * 普通の単体テストを書く、という切り分けが実務では効く。
+ * パスワードは 8 文字が境界なので、7 と 8 を必ず含める。
+ * 「短い例」と「十分長い例」の 2 つだけでは、境界の判定ミスを検出できない。
  */
 describe("validateLoginForm（描画を伴わない規則の単体テスト）", () => {
-  test.each([
-    ["", "password123", "メールアドレスを入力してください"],
-    ["not-an-email", "password123", "メールアドレスの形式が正しくありません"],
-  ])("email=%j のとき %s", (email, password, expected) => {
-    expect(validateLoginForm({ email, password }).email).toBe(expected);
+  const VALID_EMAIL = "user@example.com";
+  const VALID_PASSWORD = "password123";
+
+  describe("パスワードの文字数（境界は 8）", () => {
+    test.each([
+      ["V1", "", "パスワードを入力してください"],
+      ["V2", "a".repeat(7), "パスワードは8文字以上で入力してください"],
+      ["V3", "a".repeat(8), undefined],
+      ["--", "a".repeat(9), undefined],
+    ])("%s: %j 文字のとき", (_id, password, expected) => {
+      expect(validateLoginForm({ email: VALID_EMAIL, password }).password).toBe(expected);
+    });
   });
 
-  test.each([
-    ["user@example.com", "", "パスワードを入力してください"],
-    ["user@example.com", "short", "パスワードは8文字以上で入力してください"],
-  ])("password=%j のとき %s", (email, password, expected) => {
-    expect(validateLoginForm({ email, password }).password).toBe(expected);
+  describe("メールアドレスの形式", () => {
+    test.each([
+      ["V4", "", "メールアドレスを入力してください"],
+      ["V5", "   ", "メールアドレスを入力してください"],
+      ["V6", "not-an-email", "メールアドレスの形式が正しくありません"],
+      ["V7", "user@example", "メールアドレスの形式が正しくありません"],
+      ["V8", "@example.com", "メールアドレスの形式が正しくありません"],
+      ["--", "user@", "メールアドレスの形式が正しくありません"],
+      ["--", VALID_EMAIL, undefined],
+    ])("%s: %j のとき", (_id, email, expected) => {
+      expect(validateLoginForm({ email, password: VALID_PASSWORD }).email).toBe(expected);
+    });
   });
 
-  test("正しい値ならエラーなし", () => {
-    expect(validateLoginForm({ email: "user@example.com", password: "password123" })).toEqual({});
+  test("両方妥当ならエラーなし", () => {
+    expect(validateLoginForm({ email: VALID_EMAIL, password: VALID_PASSWORD })).toEqual({});
   });
 });

@@ -4,7 +4,8 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 # 比較と使い分け
 
-同じシナリオ S1〜S3 を各手法で実装した結果の比較です。
+同じケースを各手法で実装した結果の比較です。
+ケースの導出方法は「8. テスト設計」を参照してください。
 
 ## 一覧
 
@@ -23,21 +24,22 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 | project                 | 件数 | 時間   | 内訳                    |
 | ----------------------- | ---- | ------ | ----------------------- |
-| storybook（実ブラウザ） | 13   | 6.0 秒 | うちセットアップ 4.1 秒 |
-| unit（jsdom）           | 28   | 3.1 秒 | うちセットアップ 1.4 秒 |
+| storybook（実ブラウザ） | 19   | 7.5 秒 | うちセットアップ 3.8 秒 |
+| unit（jsdom）           | 41   | 4.0 秒 | うちセットアップ 1.4 秒 |
 
-実ブラウザ側は起動コストが支配的です（6.0 秒のうち 4.1 秒）。
+実ブラウザ側は起動コストが支配的です（7.5 秒のうち 3.8 秒）。
 件数に対しては緩やかに伸びるので、Story が増えても差がそのまま広がるわけではありません。
 逆に言うと、テストが少ないうちは実ブラウザ側の遅さが目立ちます。
 
-## 記述量の比較（シナリオ S3）
+## 記述量の比較（T3 送信中の状態）
 
 同じ「送信中はフォームが操作できない」を書いたときの違いです。
+ケース ID の意味は「8. テスト設計」を参照してください。
 
 **① play 関数**: 送信中の状態を args として宣言し、Story として固定できます。
 
 ```tsx
-export const SubmittingDisablesForm: Story = {
+export const Submitting: Story = {
   args: { onSubmit: fn(() => new Promise<void>(() => {})) },
   play: async ({ canvas, userEvent, step }) => {
     /* 操作と検証 */
@@ -49,7 +51,7 @@ export const SubmittingDisablesForm: Story = {
 
 ```tsx
 test("S3 送信中はフォームが操作できない", async () => {
-  await runStory(SubmittingDisablesForm);
+  await runStory(Submitting);
 });
 ```
 

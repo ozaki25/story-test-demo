@@ -11,20 +11,32 @@ import { LoginForm } from "./LoginForm";
  *   手法③ a11y（axe）
  * ============================================================
  *
- * 3 つの手法が 1 ファイルに同居する。これが Storybook 流の書き方で、
- * 最初は分かりにくいところなので整理しておく。
+ * 3 つの手法が 1 ファイルに同居する。
  *
  *   ・play 関数を書いた Story          → その操作と検証が実行される（手法①）
  *   ・play 関数を書いていない Story    → 描画が通るかだけ検証される（手法②）
  *   ・すべての Story                   → axe が実行される（手法③）
  *
- * つまり Story を書く行為そのものがテストを増やす。play 関数を足すと、
- * 同じ Story が「表示の確認」から「振る舞いの検証」に格上げされる、という関係。
+ * ============================================================
+ * ケースの選び方
+ * ============================================================
  *
- * ここで書くシナリオ S1〜S3 は、以下の 2 ファイルでも同じ内容を実装している。
- * 読み比べると、手法ごとの記述量と読み口の違いが分かる。
- *   ・LoginForm.portable.test.tsx （手法④ Portable Stories / jsdom）
- *   ・LoginForm.plain.test.tsx    （対照群 素の Testing Library / jsdom）
+ * 思いついたものを並べるのではなく、技法から導出している。
+ *
+ *   T1〜T6 … 状態遷移テスト。下の状態機械の各遷移に 1 つずつ対応する。
+ *   D1〜D4 … デシジョンテーブル。email × password の妥当性の全組み合わせ。
+ *   K1     … 操作経路。ポインタではなくキーボードだけで完了できるか。
+ *
+ *   idle ──[不正な入力で送信]──▶ error ──[修正して送信]──┐
+ *     │                                                   │
+ *     └──[妥当な入力で送信]──────────────────────────────▶ submitting
+ *                                             ┌───────────┴───────────┐
+ *                                       [解決]▼                  [棄却]▼
+ *                                           idle                    error
+ *
+ * 描画を伴わない入力値の境界（パスワードの文字数など）はここには置かない。
+ * Story にすると一覧性を損なうだけなので、LoginForm.plain.test.tsx で
+ * 純粋関数として検証している。判断の根拠は「解説/8. テスト設計」を参照。
  */
 const meta = {
   title: "components/LoginForm",
@@ -32,7 +44,7 @@ const meta = {
   args: {
     // fn() は storybook/test のスパイ。
     // Storybook の UI 上では Actions パネルに呼び出しが表示され、
-    // テストとして実行されるときは呼び出し引数を検証できる。1 つの定義が両方で機能する。
+    // テストとして実行されるときは呼び出し引数を検証できる。
     onSubmit: fn(),
   },
 } satisfies Meta<typeof LoginForm>;
@@ -41,19 +53,23 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+/** 解決しない Promise。送信中の状態に留めたいときに使う。 */
+const never = () => new Promise<void>(() => {});
+
+const VALID = { email: "user@example.com", password: "password123" };
+
 /**
  * play 関数なし。手法②（描画が通るか）と手法③（axe）だけが働く Story。
- * Storybook のサイドバーから見たときの「初期表示はこれ」というカタログも兼ねる。
  */
 export const Default: Story = {
   name: "初期表示",
 };
 
 /**
- * シナリオ S1: 空のまま submit するとエラーメッセージが出る。
+ * T1 / D4: 空のまま送信する。email と password の両方が不正なケースでもある。
  */
 export const EmptySubmitShowsErrors: Story = {
-  name: "S1 空のまま送信するとエラーが出る",
+  name: "T1・D4 空のまま送信すると両方にエラーが出る",
   play: async ({ canvas, userEvent, args, step }) => {
     await step("空のままログインボタンを押す", async () => {
       await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
@@ -71,14 +87,14 @@ export const EmptySubmitShowsErrors: Story = {
 };
 
 /**
- * シナリオ S2: 正しく入力して submit すると onSubmit が正しい値で呼ばれる。
+ * T3 / D1: 妥当な入力で送信する。
  */
 export const ValidSubmitCallsOnSubmit: Story = {
-  name: "S2 正しく入力して送信すると onSubmit が呼ばれる",
+  name: "T3・D1 正しく入力して送信すると onSubmit が呼ばれる",
   play: async ({ canvas, userEvent, args, step }) => {
     await step("フォームを入力する", async () => {
-      await userEvent.type(canvas.getByLabelText("メールアドレス"), "user@example.com");
-      await userEvent.type(canvas.getByLabelText("パスワード"), "password123");
+      await userEvent.type(canvas.getByLabelText("メールアドレス"), VALID.email);
+      await userEvent.type(canvas.getByLabelText("パスワード"), VALID.password);
     });
 
     await step("ログインボタンを押す", async () => {
@@ -86,30 +102,88 @@ export const ValidSubmitCallsOnSubmit: Story = {
     });
 
     await step("入力値がそのまま onSubmit に渡る", async () => {
-      await expect(args.onSubmit).toHaveBeenCalledWith({
-        email: "user@example.com",
-        password: "password123",
-      });
+      await expect(args.onSubmit).toHaveBeenCalledWith(VALID);
     });
   },
 };
 
 /**
- * シナリオ S3: 送信中は入力とボタンが操作できない。
- *
- * onSubmit が解決しない Promise を返すことで、送信中の状態に留める。
- * 「非同期処理の途中の状態」を Story として固定できるのは、
- * args でコンポーネントの外側を差し替えられる Storybook の書き方の利点。
+ * D3: email だけが不正。password 側にはエラーを出さない。
  */
-export const SubmittingDisablesForm: Story = {
-  name: "S3 送信中はフォームが操作できない",
-  args: {
-    onSubmit: fn(() => new Promise<void>(() => {})),
+export const InvalidEmailOnly: Story = {
+  name: "D3 メールアドレスだけ不正ならそちらにだけエラーが出る",
+  play: async ({ canvas, userEvent, args }) => {
+    await userEvent.type(canvas.getByLabelText("メールアドレス"), "not-an-email");
+    await userEvent.type(canvas.getByLabelText("パスワード"), VALID.password);
+    await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
+
+    await expect(
+      await canvas.findByText("メールアドレスの形式が正しくありません"),
+    ).toBeInTheDocument();
+    await expect(canvas.queryByText("パスワードを入力してください")).not.toBeInTheDocument();
+    await expect(args.onSubmit).not.toHaveBeenCalled();
   },
+};
+
+/**
+ * D2: password だけが不正。
+ *
+ * 「片側だけ不正」を email 側でしか見ていなかったので、対称なケースが欠けていた。
+ * デシジョンテーブルを書いて初めて気付いた抜け。
+ */
+export const InvalidPasswordOnly: Story = {
+  name: "D2 パスワードだけ不正ならそちらにだけエラーが出る",
+  play: async ({ canvas, userEvent, args }) => {
+    await userEvent.type(canvas.getByLabelText("メールアドレス"), VALID.email);
+    await userEvent.type(canvas.getByLabelText("パスワード"), "short");
+    await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
+
+    await expect(
+      await canvas.findByText("パスワードは8文字以上で入力してください"),
+    ).toBeInTheDocument();
+    await expect(canvas.queryByText("メールアドレスを入力してください")).not.toBeInTheDocument();
+    await expect(args.onSubmit).not.toHaveBeenCalled();
+  },
+};
+
+/**
+ * T2: エラーが出た状態から修正して送信し直す。
+ * 状態を持つフォームでは、一度エラーになってから復帰する経路が壊れやすい。
+ */
+export const RecoverFromError: Story = {
+  name: "T2 エラー表示後に修正して送信できる",
+  play: async ({ canvas, userEvent, args, step }) => {
+    await step("空のまま送信してエラーを出す", async () => {
+      await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
+      await expect(await canvas.findByText("メールアドレスを入力してください")).toBeInTheDocument();
+    });
+
+    await step("入力し直して送信する", async () => {
+      await userEvent.type(canvas.getByLabelText("メールアドレス"), VALID.email);
+      await userEvent.type(canvas.getByLabelText("パスワード"), VALID.password);
+      await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
+    });
+
+    await step("エラーが消え、送信される", async () => {
+      await expect(args.onSubmit).toHaveBeenCalledWith(VALID);
+      await expect(canvas.queryByText("メールアドレスを入力してください")).not.toBeInTheDocument();
+    });
+  },
+};
+
+/**
+ * T3 の途中経過: 送信中の見た目。
+ *
+ * onSubmit が解決しない Promise を返すことで状態を固定している。
+ * 「非同期処理の途中の状態」を Story として残せるのが、args で外側を差し替えられる利点。
+ */
+export const Submitting: Story = {
+  name: "T3 送信中はフォームが操作できない",
+  args: { onSubmit: fn(never) },
   play: async ({ canvas, userEvent, step }) => {
     await step("正しい値を入力して送信する", async () => {
-      await userEvent.type(canvas.getByLabelText("メールアドレス"), "user@example.com");
-      await userEvent.type(canvas.getByLabelText("パスワード"), "password123");
+      await userEvent.type(canvas.getByLabelText("メールアドレス"), VALID.email);
+      await userEvent.type(canvas.getByLabelText("パスワード"), VALID.password);
       await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
     });
 
@@ -127,22 +201,116 @@ export const SubmittingDisablesForm: Story = {
 };
 
 /**
- * メールアドレスの形式エラー。S1〜S3 とは別に、
- * 「バリデーション規則ごとに Story を足していける」ことを示す例。
+ * T4: 送信が成功して元の状態に戻る。
  *
- * 規則が増えるたびに Story が 1 つ増え、テストも 1 つ増える。
- * 同時に Storybook 上ではその状態の見た目がカタログとして残る。
- * この二重取りが、Story を経由してテストを書く一番の動機になる。
+ * 送信中に入るところまでしか検証していないと、戻ってこない不具合を見逃す。
  */
-export const InvalidEmailFormat: Story = {
-  name: "メールアドレスの形式が不正",
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByLabelText("メールアドレス"), "not-an-email");
-    await userEvent.type(canvas.getByLabelText("パスワード"), "password123");
-    await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
+export const SubmitSucceeds: Story = {
+  name: "T4 送信に成功すると操作できる状態に戻る",
+  args: { onSubmit: fn(async () => {}) },
+  play: async ({ canvas, userEvent, step }) => {
+    await step("正しい値を入力して送信する", async () => {
+      await userEvent.type(canvas.getByLabelText("メールアドレス"), VALID.email);
+      await userEvent.type(canvas.getByLabelText("パスワード"), VALID.password);
+      await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
+    });
 
-    await expect(
-      await canvas.findByText("メールアドレスの形式が正しくありません"),
-    ).toBeInTheDocument();
+    await step("ボタンの表示が戻り、入力欄も操作できる", async () => {
+      await expect(await canvas.findByRole("button", { name: "ログイン" })).toBeInTheDocument();
+      await expect(canvas.getByLabelText("メールアドレス")).toBeEnabled();
+      await expect(canvas.getByLabelText("パスワード")).toBeEnabled();
+    });
+  },
+};
+
+/**
+ * T5: 送信が失敗する。
+ *
+ * このケースを設計した時点では、実装に catch がなく未処理の Promise 拒否になっていた。
+ * 画面には何も出ず、利用者は送信できたのか分からないまま放置される状態だった。
+ * ケースを先に洗い出したことで見つかった不具合。
+ */
+export const SubmitFails: Story = {
+  name: "T5 送信に失敗するとエラーが出て操作できる状態に戻る",
+  args: {
+    onSubmit: fn(async () => {
+      throw new Error("network error");
+    }),
+  },
+  play: async ({ canvas, userEvent, step }) => {
+    await step("正しい値を入力して送信する", async () => {
+      await userEvent.type(canvas.getByLabelText("メールアドレス"), VALID.email);
+      await userEvent.type(canvas.getByLabelText("パスワード"), VALID.password);
+      await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
+    });
+
+    await step("失敗したことが画面に出る", async () => {
+      await expect(
+        await canvas.findByText("送信に失敗しました。時間をおいて再度お試しください。"),
+      ).toBeInTheDocument();
+    });
+
+    await step("再操作できる状態に戻る", async () => {
+      await expect(canvas.getByRole("button", { name: "ログイン" })).toBeInTheDocument();
+      await expect(canvas.getByLabelText("メールアドレス")).toBeEnabled();
+    });
+  },
+};
+
+/**
+ * T6: 送信中の多重送信を防ぐ。
+ *
+ * ボタンは押下を止めるが、入力欄で Enter を押すとボタンを経由せずに送信される。
+ * その経路を塞いでいないと二重送信が起きる。
+ * 「ボタンを無効にしたから大丈夫」で済ませると見落とす。
+ */
+export const NoDoubleSubmit: Story = {
+  name: "T6 送信中に Enter を押しても二重送信されない",
+  args: { onSubmit: fn(never) },
+  play: async ({ canvas, userEvent, args, step }) => {
+    await step("入力して Enter で送信する", async () => {
+      await userEvent.type(canvas.getByLabelText("メールアドレス"), VALID.email);
+      await userEvent.type(canvas.getByLabelText("パスワード"), `${VALID.password}{Enter}`);
+      await expect(await canvas.findByRole("button", { name: "送信中…" })).toBeInTheDocument();
+    });
+
+    await step("送信中にもう一度 Enter を押す", async () => {
+      await userEvent.type(canvas.getByLabelText("パスワード"), "{Enter}");
+    });
+
+    await step("onSubmit は 1 回しか呼ばれていない", async () => {
+      await expect(args.onSubmit).toHaveBeenCalledTimes(1);
+    });
+  },
+};
+
+/**
+ * K1: キーボードだけで完了できるか。
+ *
+ * クリックのテストだけを積んでいると、Tab 順やフォーカス移動が壊れても気付けない。
+ * 実ブラウザで動かす価値が最も高い種類のケース。
+ */
+export const KeyboardOnly: Story = {
+  name: "K1 キーボードだけで入力して送信できる",
+  play: async ({ canvas, userEvent, args, step }) => {
+    await step("Tab で移動しながら入力する", async () => {
+      await userEvent.tab();
+      await expect(canvas.getByLabelText("メールアドレス")).toHaveFocus();
+      await userEvent.keyboard(VALID.email);
+
+      await userEvent.tab();
+      await expect(canvas.getByLabelText("パスワード")).toHaveFocus();
+      await userEvent.keyboard(VALID.password);
+    });
+
+    await step("Tab でボタンへ移動して Enter で送信する", async () => {
+      await userEvent.tab();
+      await expect(canvas.getByRole("button", { name: "ログイン" })).toHaveFocus();
+      await userEvent.keyboard("{Enter}");
+    });
+
+    await step("送信される", async () => {
+      await expect(args.onSubmit).toHaveBeenCalledWith(VALID);
+    });
   },
 };

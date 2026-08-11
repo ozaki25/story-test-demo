@@ -24,34 +24,46 @@ import * as stories from "./LoginForm.stories";
  * このファイルでは 2 つの使い方を書き分けている。用途が違うので混同しないこと。
  *
  *   使い方 A: Story の play 関数を jsdom でそのまま再実行する
- *             → テストコードを書かずにテストが増える。Story を書けば済む。
  *   使い方 B: Story を「入力の定義」として再利用し、検証はテスト側に書く
- *             → Story に載せたくない細かい検証を、Story の状態を土台にして書ける。
  */
-const { Default, EmptySubmitShowsErrors, ValidSubmitCallsOnSubmit, SubmittingDisablesForm } =
-  composeStories(stories);
+const {
+  Default,
+  EmptySubmitShowsErrors,
+  ValidSubmitCallsOnSubmit,
+  InvalidEmailOnly,
+  InvalidPasswordOnly,
+  RecoverFromError,
+  Submitting,
+  SubmitSucceeds,
+  SubmitFails,
+  NoDoubleSubmit,
+} = composeStories(stories);
 
+/**
+ * 使い方 A。
+ *
+ * どの Story を jsdom 側でも回すかは選んでいる。全部を機械的に回すと、
+ * 実ブラウザ側のスモークテストと内容が完全に重複するだけになる。
+ *
+ * ここでは状態遷移（T1〜T6）とデシジョンテーブル（D1〜D4）を対象にした。
+ * 開発中に何度も回したいのはこの層で、jsdom の速さが効くため。
+ *
+ * K1（キーボード操作）は入れていない。Tab 順やフォーカスの挙動は
+ * 実ブラウザで確かめる意味が大きく、jsdom で通っても保証にならないため。
+ */
 describe("使い方A: Story の play 関数を jsdom で再実行する", () => {
-  /**
-   * テストの中身をここには書いていない。検証はすべて Story 側の play 関数にある。
-   *
-   * runStory は Story の run()（描画 + play の実行）をテストごとに独立したコンテナで
-   * 呼ぶヘルパー。render() を併用すると二重にマウントされるので、こちらだけを使う。
-   *
-   * これで同じ検証が実ブラウザ（storybook project）と jsdom（unit project）の
-   * 両方で走る。普段は速い jsdom で回し、CI では実ブラウザでも回す、といった
-   * 使い分けができる。Story を 1 つ足せば、両方のテストが同時に増える。
-   */
-  test("S1 空のまま送信するとエラーが出る", async () => {
-    await runStory(EmptySubmitShowsErrors);
-  });
-
-  test("S2 正しく入力して送信すると onSubmit が呼ばれる", async () => {
-    await runStory(ValidSubmitCallsOnSubmit);
-  });
-
-  test("S3 送信中はフォームが操作できない", async () => {
-    await runStory(SubmittingDisablesForm);
+  test.each([
+    ["T1・D4 空送信で両方エラー", EmptySubmitShowsErrors],
+    ["T2 エラー後に修正して送信", RecoverFromError],
+    ["T3・D1 正常送信", ValidSubmitCallsOnSubmit],
+    ["T3 送信中", Submitting],
+    ["T4 送信成功", SubmitSucceeds],
+    ["T5 送信失敗", SubmitFails],
+    ["T6 二重送信の防止", NoDoubleSubmit],
+    ["D2 パスワードだけ不正", InvalidPasswordOnly],
+    ["D3 メールだけ不正", InvalidEmailOnly],
+  ])("%s", async (_name, Story) => {
+    await runStory(Story);
   });
 });
 
@@ -60,7 +72,7 @@ describe("使い方B: Story を入力の定義として再利用し、検証は�
    * Story の args を土台にしつつ、props を上書きして検証を差し替える。
    * 「この検証は Storybook のカタログに載せるほどではない」ものを書く場所になる。
    */
-  test("S2 送信後もフォームの値は保持される", async () => {
+  test("送信後もフォームの値は保持される", async () => {
     const onSubmit = fn();
     render(<Default onSubmit={onSubmit} />);
 
@@ -73,21 +85,6 @@ describe("使い方B: Story を入力の定義として再利用し、検証は�
       password: "password123",
     });
     expect(screen.getByLabelText("メールアドレス")).toHaveValue("user@example.com");
-  });
-
-  test("エラー表示後に入力を直して再送信できる", async () => {
-    const onSubmit = fn();
-    render(<Default onSubmit={onSubmit} />);
-
-    await userEvent.click(screen.getByRole("button", { name: "ログイン" }));
-    expect(screen.getByText("メールアドレスを入力してください")).toBeInTheDocument();
-
-    await userEvent.type(screen.getByLabelText("メールアドレス"), "user@example.com");
-    await userEvent.type(screen.getByLabelText("パスワード"), "password123");
-    await userEvent.click(screen.getByRole("button", { name: "ログイン" }));
-
-    expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("メールアドレスを入力してください")).not.toBeInTheDocument();
   });
 
   /**
@@ -129,11 +126,6 @@ describe("使い方B: Story を入力の定義として再利用し、検証は�
  * （LoginForm.plain.test.tsx）では素の user-event がそのまま動く。
  * 「動くファイルと動かないファイルがある」状態になるのが厄介なところ。
  *
- * storybook/test の userEvent は Storybook 側で用意された同じインスタンスなので、
- * 二重パッチが起きず、実ブラウザ側の play 関数とも挙動が揃う。
- * Portable Stories を採用するなら、プロジェクト全体で
- * storybook/test の userEvent に統一しておくのが安全。
- *
  * ■ fn（スパイ）
  *
  * onSubmit のスパイも vi.fn() ではなく storybook/test の fn() を使っている。
@@ -144,7 +136,4 @@ describe("使い方B: Story を入力の定義として再利用し、検証は�
  *   Type 'Mock<Procedure>' is not assignable to type 'Mock<Procedure> | undefined'.
  *
  * Story の args を上書きするときは、Story 側と同じ fn() を使う。
- *
- * 確認したバージョン: storybook 10.5.7 / vitest 4.1.10 /
- * @testing-library/user-event 14.6.3 / jsdom 30.0.1
  */

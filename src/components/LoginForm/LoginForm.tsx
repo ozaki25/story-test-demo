@@ -56,9 +56,21 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
   const [values, setValues] = useState<LoginFormValues>({ email: "", password: "" });
   const [errors, setErrors] = useState<LoginFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    // 送信中の多重送信を防ぐ。
+    //
+    // ボタン側でも押下は止まるが、入力欄で Enter を押すと
+    // ボタンを経由せずにフォームが送信される。
+    // その経路があるので、ここで止める必要がある。
+    if (isSubmitting) {
+      return;
+    }
+
+    setSubmitError(null);
 
     const nextErrors = validateLoginForm(values);
     setErrors(nextErrors);
@@ -69,6 +81,10 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
     setIsSubmitting(true);
     try {
       await onSubmit(values);
+    } catch {
+      // catch がないと、onSubmit が失敗したときに未処理の Promise 拒否になる。
+      // 画面には何も出ず、利用者は送信できたのか分からないまま放置される。
+      setSubmitError("送信に失敗しました。時間をおいて再度お試しください。");
     } finally {
       setIsSubmitting(false);
     }
@@ -131,6 +147,12 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
           </p>
         )}
       </div>
+
+      {submitError !== null && (
+        <p className="text-xs text-red-700" role="alert">
+          {submitError}
+        </p>
+      )}
 
       <Button type="submit" loading={isSubmitting}>
         ログイン
