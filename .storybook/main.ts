@@ -1,4 +1,5 @@
 import type { StorybookConfig } from "@storybook/react-vite";
+import remarkGfm from "remark-gfm";
 
 const config: StorybookConfig = {
   // ドキュメント（MDX）と Story を両方読み込む。
@@ -8,8 +9,20 @@ const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(ts|tsx)"],
 
   addons: [
-    // MDX ドキュメントと autodocs を有効にする
-    "@storybook/addon-docs",
+    {
+      // MDX ドキュメントと autodocs を有効にする
+      name: "@storybook/addon-docs",
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            // MDX は既定では GFM を解釈しない。
+            // これを入れないと、表・打ち消し線・タスクリストが
+            // パイプ記号を含む生のテキストとして表示される。
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
     // 手法③ a11y: Story ごとに axe を実行する
     "@storybook/addon-a11y",
     // 手法①②: play 関数と全 Story スモークテストを Vitest で実行する

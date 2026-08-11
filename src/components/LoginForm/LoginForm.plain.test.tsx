@@ -66,7 +66,11 @@ describe("LoginForm（Story を使わない素の Testing Library）", () => {
     await userEvent.type(screen.getByLabelText("パスワード"), "password123");
     await userEvent.click(screen.getByRole("button", { name: "ログイン" }));
 
-    expect(await screen.findByRole("button", { name: "送信中…" })).toBeDisabled();
+    // 送信中のボタンは disabled ではなく aria-disabled。詳細は Button.tsx を参照。
+    expect(await screen.findByRole("button", { name: "送信中…" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(screen.getByLabelText("メールアドレス")).toBeDisabled();
     expect(screen.getByLabelText("パスワード")).toBeDisabled();
   });

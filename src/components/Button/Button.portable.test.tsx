@@ -41,12 +41,14 @@ describe("使い方A: Story をそのまま jsdom で描画する", () => {
 });
 
 describe("使い方B: Story を入力の定義として再利用し、検証はテスト側に書く", () => {
-  test("処理中の Story はボタンが無効になり、ラベルが差し替わる", async () => {
+  test("処理中の Story はラベルが差し替わり、押下できなくなる", async () => {
     await runStory(Loading);
 
     const button = screen.getByRole("button", { name: "送信中…" });
-    expect(button).toBeDisabled();
-    expect(button).toHaveAttribute("aria-busy", "true");
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAttribute("data-pending", "true");
+    // disabled 属性は付かない。詳細は Button.tsx の loading prop のコメントを参照。
+    expect(button).not.toBeDisabled();
   });
 
   test("Story の args を上書きして onClick を検証する", async () => {

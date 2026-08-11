@@ -30,16 +30,34 @@ describe("Button（Story を使わない素の Testing Library）", () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  test("loading のときは無効になり、ラベルが差し替わる", () => {
+  test("loading のときはラベルが差し替わり、押下できなくなる", async () => {
+    const onClick = vi.fn<() => void>();
     render(
-      <Button loading onClick={vi.fn<() => void>()}>
+      <Button loading onClick={onClick}>
         ボタン
       </Button>,
     );
 
     const button = screen.getByRole("button", { name: "送信中…" });
-    expect(button).toBeDisabled();
-    expect(button).toHaveAttribute("aria-busy", "true");
+
+    // 押しても呼ばれない、というのが本質的な保証。
+    await userEvent.click(button);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  test("loading は disabled とは別物で、フォーカスを保つ", () => {
+    render(<Button loading>ボタン</Button>);
+
+    const button = screen.getByRole("button", { name: "送信中…" });
+
+    // 押下は止まるが disabled 属性は付かない。
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAttribute("data-pending", "true");
+    expect(button).not.toBeDisabled();
+
+    // フォーカスできる。disabled にするとここが失われ、
+    // スクリーンリーダー利用者は押した直後にボタンを見失う。
+    expect(button).toHaveAttribute("tabindex", "0");
   });
 
   test("disabled のときはクリックしても onClick が呼ばれない", async () => {

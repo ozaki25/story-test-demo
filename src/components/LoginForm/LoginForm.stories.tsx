@@ -114,7 +114,12 @@ export const SubmittingDisablesForm: Story = {
     });
 
     await step("ボタンが送信中の表示になり、入力欄も無効になる", async () => {
-      await expect(await canvas.findByRole("button", { name: "送信中…" })).toBeDisabled();
+      // 送信中のボタンは disabled 属性ではなく aria-disabled で表現される。
+      // フォーカスを保ったまま押下だけを止めるため。詳細は Button.tsx を参照。
+      await expect(await canvas.findByRole("button", { name: "送信中…" })).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
       await expect(canvas.getByLabelText("メールアドレス")).toBeDisabled();
       await expect(canvas.getByLabelText("パスワード")).toBeDisabled();
     });
