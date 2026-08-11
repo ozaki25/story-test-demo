@@ -1,0 +1,128 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="解説/7. 構成と設計判断" />
+
+# 構成と設計判断
+
+大規模化したときに壊れないことを優先して選んだ構成です。
+それぞれ「なぜそうしたか」と「そうしないと何が起きるか」を書いています。
+
+## ディレクトリ構成
+
+コンポーネント単位でディレクトリを切り、手法はファイル名のサフィックスで表しています。
+
+```
+.storybook/
+  main.ts                          Story と MDX の読み込み、アドオンの登録
+  preview.tsx                      全 Story 共通の parameters / decorators / tags
+src/
+  components/
+    Button/                        振る舞いが薄く、状態のバリエーションが多い例
+      Button.tsx
+      Button.stories.tsx           ② スモークテスト / ③ a11y
+      Button.portable.test.tsx     ④ Portable Stories
+      Button.plain.test.tsx        対照群
+      index.ts
+    LoginForm/                     操作・非同期を伴う例
+      LoginForm.tsx
+      LoginForm.stories.tsx        ① play 関数 / ② スモーク / ③ a11y
+      LoginForm.portable.test.tsx  ④ Portable Stories
+      LoginForm.plain.test.tsx     対照群
+      index.ts
+  docs/                            この解説
+  styles/global.css                Tailwind の読み込みとテーマ定義
+  test/
+    setup.unit.ts                  jsdom 側のセットアップ
+    portable.ts                    Portable Stories 用のヘルパー
+vite.config.ts                     Vite と Vitest の設定（1 ファイルに集約）
+```
+
+手法別にディレクトリを切る構成（`tests/play/`, `tests/portable/`）は採っていません。
+コンポーネントが増えたときに、1 つのコンポーネントの情報が複数の場所に散るためです。
+
+2 つのコンポーネントで同じ規約が揃っているので、
+3 つ目を足すときに何を書けばよいかが構成から読み取れます。
+
+## 1. Vite と Vitest の設定を 1 ファイルにまとめる
+
+`storybook init` が生成するのもこの形です。
+
+`vite.config.ts` と `vitest.config.ts` に分けると、Storybook は前者、テストは後者を読みます。
+alias や plugin を片方にだけ足したときに
+「Storybook では解決できるがテストでは落ちる」が起きます。
+設定を 1 か所に集約して、その食い違いを構造的に防いでいます。
+
+## 2. テストの収集条件を手法別サフィックスで絞らない
+
+`include` を `*.{portable,plain}.test.tsx` のように絞ると、
+規約から外れた名前のテストが**警告もなく無視されます**。
+
+収集は `src/**/*.test.{ts,tsx}` で広く行い、手法単位の実行はコマンド側で絞ります。
+
+```bash
+npm run test:portable  # vitest run --project=unit portable.test
+npm run test:plain     # vitest run --project=unit plain.test
+```
+
+実際に踏んだ問題です。詳細は「5. 落とし穴」を参照してください。
+
+## 3. 実行環境で Vitest の project を分ける
+
+`storybook`（実ブラウザ）と `unit`（jsdom）の 2 つに分けています。
+
+片方だけ回せるので、開発中は速い jsdom、CI では両方、という使い分けができます。
+CI での並列化や部分実行もしやすくなります。
+
+## 4. Story のアノテーションを一箇所に集約する
+
+`.storybook/preview.tsx` の decorators / parameters を、
+jsdom 側は `setProjectAnnotations`（`src/test/setup.unit.ts`）で読み込んでいます。
+
+繋いでいないと decorator や parameters が適用されず、
+「Storybook では動くのにテストだけ落ちる」が多発します。
+コンポーネントが増えるほど原因の特定が面倒になるので、
+**その配線自体を検証するテストを 1 本置いています**
+（`LoginForm.portable.test.tsx` の「preview.tsx の decorator が適用されている」）。
+
+## 5. 環境差は setup ファイル 1 箇所で吸収する
+
+jsdom には `navigator.clipboard` がなく、そのままでは play 関数の引数から
+`userEvent` を受け取れません。
+
+Story 側で `storybook/test` の `userEvent` を import して回避することもできますが、
+その方針だと import を書き忘れた Story が
+「実ブラウザでは通るが jsdom だけ落ちる」状態になります。
+Story が増えるほど事故が増えるので、Story は標準の書き方に統一し、
+差分は setup で埋めています。
+
+## スタイル: Tailwind CSS v4
+
+設定は `src/styles/global.css` の `@theme` に書き、`tailwind.config.js` は使いません。
+Vite プラグイン（`@tailwindcss/vite`）を `vite.config.ts` に入れてあるので、
+Storybook もテストも同じ設定を読みます。設定を 1 ファイルにまとめた効果がここに出ます。
+
+バリアントごとのクラスはオブジェクトへ切り出してください。
+
+```tsx
+const VARIANT_CLASS: Record<ButtonVariant, string> = {
+  primary: "bg-blue-700 text-white enabled:hover:bg-blue-800",
+  secondary: "bg-white text-slate-800 border-slate-300 enabled:hover:bg-slate-100",
+};
+```
+
+テンプレートリテラルで組み立てると Tailwind がクラス名を静的に抽出できず、
+本番ビルドでスタイルが落ちます。
+
+## リンタ / フォーマッタ: oxc
+
+`oxlint` と `oxfmt` を使っています。react / jsx-a11y / import / promise / vitest の
+プラグインを有効にしています。
+
+**`eslint-plugin-storybook` 相当のルールは oxlint にありません。**
+play 関数の await 漏れのような Story 固有の間違いは検出できないので、
+そこを重視するなら ESLint を併用する判断もあります。
+
+なお oxlint は導入直後に、手法④のテストを
+「アサーションのないテスト」として指摘してきました。
+その対処は「5. 落とし穴」に書いています。
+手法の選択が周辺のツール設定にも波及する、という例です。
