@@ -38,7 +38,6 @@ jobs:
         run: npm test
 
   # master への push でのみ GitHub Pages に公開する。
-  # 事前にリポジトリの Settings > Pages で Source を "GitHub Actions" にしておくこと。
   deploy:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     needs: test
@@ -67,7 +66,12 @@ jobs:
       - name: Build Storybook
         run: npm run build-storybook
 
+      # enablement: true で Pages 未設定のリポジトリでも自動で有効化する。
+      # 既定の false のままだと、Settings > Pages で Source を "GitHub Actions" に
+      # 手動で変更するまで "Get Pages site failed ... Not Found" で落ちる。
       - uses: actions/configure-pages@v6
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v5
         with:

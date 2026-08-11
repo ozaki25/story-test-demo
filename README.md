@@ -137,8 +137,12 @@ CHROMIUM_EXECUTABLE_PATH=/path/to/chrome npm run test:stories
 ## GitHub Pages への公開
 
 `.github/workflows/storybook.yml` が `master` への push で公開します。
-初回のみ、リポジトリの **Settings > Pages > Source** を **GitHub Actions** に
-変更しておく必要があります。
+
+`configure-pages` に `enablement: true` を渡しているので、Pages が未設定でも
+ワークフロー側で有効化されます。この指定がないと、
+`Get Pages site failed ... Not Found` で deploy ジョブが落ちます。
+組織のポリシーで自動有効化が禁止されている場合のみ、
+**Settings > Pages > Source** を **GitHub Actions** に手動で変更してください。
 
 `storybook build` の出力はアセットを相対パスで参照するため、
 サブパス配信（`https://<user>.github.io/<repo>/`）でも `base` の設定は不要です。
