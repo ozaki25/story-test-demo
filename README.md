@@ -60,7 +60,11 @@ npm run test:stories       # 実ブラウザ（①②③）
 npm run test:unit          # jsdom（④と対照群）
 npm run test:portable      # 手法④だけ
 npm run test:plain         # 対照群だけ
-npm run test:coverage      # カバレッジ付き
+npm run test:coverage      # カバレッジ付き（全部）
+npm run coverage:browser   # 方式ごとのカバレッジ（実ブラウザ）
+npm run coverage:portable  # 方式ごとのカバレッジ（jsdom / Portable Stories）
+npm run coverage:plain     # 方式ごとのカバレッジ（対照群）
+npm run coverage:pure      # 方式ごとのカバレッジ（純粋関数のみ）
 
 npm run lint               # oxlint
 npm run format             # oxfmt（書き換え）

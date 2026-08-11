@@ -88,7 +88,10 @@ export default defineConfig({
 
     coverage: {
       provider: "v8",
-      reporter: ["text", "html"],
+      reporter: ["text", "html", "json-summary"],
+      // Vitest 4 では coverage.all が廃止され、include に一致するファイルは
+      // 実行されなくても集計対象になる。方式ごとに計測したときに
+      // 「触れていないファイル」が表から消えないので、比較が歪まない。
       include: ["src/components/**/*.{ts,tsx}"],
       exclude: ["src/**/*.stories.tsx", "src/**/*.test.{ts,tsx}", "src/**/index.ts"],
     },

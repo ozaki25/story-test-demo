@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn } from "storybook/test";
+import { expect, fireEvent, fn } from "storybook/test";
 
 import { LoginForm } from "./LoginForm";
 
@@ -260,22 +260,31 @@ export const SubmitFails: Story = {
 /**
  * T6: 送信中の多重送信を防ぐ。
  *
- * ボタンは押下を止めるが、入力欄で Enter を押すとボタンを経由せずに送信される。
- * その経路を塞いでいないと二重送信が起きる。
- * 「ボタンを無効にしたから大丈夫」で済ませると見落とす。
+ * ここは「ユーザー操作で二重送信を試みる」形では書けない。
+ * 送信中は入力欄が disabled になり Enter が届かず、
+ * ボタンも押下が止まるので、UI からガードに到達する経路が存在しないためである。
+ *
+ * 実際、最初は「送信中に Enter を押す」と書いていたが、
+ * ガードを削除してもテストが通ってしまった。入力欄が無効なので
+ * そもそも submit が発火せず、検証したい分岐を一度も通っていなかった。
+ * カバレッジで未到達行として出て初めて気付いた。アサーションでは分からない。
+ *
+ * ガードは「UI 以外の経路で submit が来ても二重送信しない」ための防御なので、
+ * その水準に合わせて submit イベントを直接発火させて検証する。
  */
 export const NoDoubleSubmit: Story = {
-  name: "T6 送信中に Enter を押しても二重送信されない",
+  name: "T6 送信中に submit が再度発火しても二重送信されない",
   args: { onSubmit: fn(never) },
   play: async ({ canvas, userEvent, args, step }) => {
-    await step("入力して Enter で送信する", async () => {
+    await step("入力して送信し、送信中にする", async () => {
       await userEvent.type(canvas.getByLabelText("メールアドレス"), VALID.email);
-      await userEvent.type(canvas.getByLabelText("パスワード"), `${VALID.password}{Enter}`);
+      await userEvent.type(canvas.getByLabelText("パスワード"), VALID.password);
+      await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
       await expect(await canvas.findByRole("button", { name: "送信中…" })).toBeInTheDocument();
     });
 
-    await step("送信中にもう一度 Enter を押す", async () => {
-      await userEvent.type(canvas.getByLabelText("パスワード"), "{Enter}");
+    await step("送信中にもう一度 submit を発火させる", async () => {
+      fireEvent.submit(canvas.getByRole("form", { name: "ログイン" }));
     });
 
     await step("onSubmit は 1 回しか呼ばれていない", async () => {

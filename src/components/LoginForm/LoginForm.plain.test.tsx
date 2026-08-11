@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 // このファイルは Portable Stories を一切使わないので、素の user-event がそのまま動く。
 // 同じファイルに Portable Stories を持ち込むと、Storybook による
 // HTMLElement.prototype.focus のパッチと衝突して壊れる。詳細は「解説/5. 落とし穴」を参照。
@@ -113,14 +113,19 @@ describe("状態遷移（T1〜T6）", () => {
     expect(screen.getByRole("button", { name: "ログイン" })).toBeInTheDocument();
   });
 
-  test("T6 送信中に Enter を押しても二重送信されない", async () => {
+  /**
+   * ガードは UI からは到達できない（送信中は入力欄が無効で Enter が届かない）。
+   * 最初は「送信中に Enter を押す」と書いていたが、ガードを消しても通ってしまい、
+   * カバレッジで未到達と分かった。submit イベントを直接発火させて検証する。
+   */
+  test("T6 送信中に submit が再度発火しても二重送信されない", async () => {
     const { onSubmit } = setup(never);
 
-    await userEvent.type(screen.getByLabelText("メールアドレス"), VALID.email);
-    await userEvent.type(screen.getByLabelText("パスワード"), `${VALID.password}{Enter}`);
+    await fillValidValues();
+    await userEvent.click(screen.getByRole("button", { name: "ログイン" }));
     expect(await screen.findByRole("button", { name: "送信中…" })).toBeInTheDocument();
 
-    await userEvent.type(screen.getByLabelText("パスワード"), "{Enter}");
+    fireEvent.submit(screen.getByRole("form", { name: "ログイン" }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
