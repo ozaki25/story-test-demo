@@ -138,11 +138,15 @@ CHROMIUM_EXECUTABLE_PATH=/path/to/chrome npm run test:stories
 
 `.github/workflows/storybook.yml` が `master` への push で公開します。
 
-`configure-pages` に `enablement: true` を渡しているので、Pages が未設定でも
-ワークフロー側で有効化されます。この指定がないと、
-`Get Pages site failed ... Not Found` で deploy ジョブが落ちます。
-組織のポリシーで自動有効化が禁止されている場合のみ、
-**Settings > Pages > Source** を **GitHub Actions** に手動で変更してください。
+**初回のみ手動の設定が必要です。**
+リポジトリの **Settings > Pages > Source** を **GitHub Actions** に変更してください。
+未設定のままだと deploy ジョブが `Get Pages site failed ... Not Found` で失敗します。
+
+`configure-pages` の `enablement: true` による自動有効化も試しましたが、
+Pages サイトの新規作成にはリポジトリ管理者権限が必要で、
+ワークフローの `GITHUB_TOKEN` では
+`Create Pages site failed. Error: Resource not accessible by integration` になります。
+`permissions` に `pages: write` を与えても足りないため、この手順は省略できません。
 
 `storybook build` の出力はアセットを相対パスで参照するため、
 サブパス配信（`https://<user>.github.io/<repo>/`）でも `base` の設定は不要です。
