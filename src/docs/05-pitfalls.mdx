@@ -1,0 +1,80 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="解説/5. 落とし穴" />
+
+# 落とし穴
+
+このリポジトリを組む過程で実際に踏んだものだけを載せています。
+いずれも「実ブラウザでは通るが jsdom では落ちる」形で現れるため、
+Portable Stories を採用するかどうかの判断に直結します。
+
+確認したバージョン: storybook 10.5.7 / vitest 4.1.10 / @testing-library/user-event 14.6.3 / jsdom 30.0.1
+
+## 1. jsdom では play の引数から userEvent が取れない
+
+**症状**: Portable Stories で play 関数を再実行すると `userEvent.click is not a function`。
+
+**原因**: Storybook は play の引数に `userEvent` を注入するとき、
+`globalThis.window.navigator.clipboard` の存在を条件にしています。
+jsdom 30 には `clipboard` がないため、注入がスキップされます。
+
+**対策**: `src/test/setup.unit.ts` で `navigator.clipboard` を補っています。
+
+Story 側で `storybook/test` の `userEvent` を import して回避することもできますが、
+その方針だと import を書き忘れた Story が
+「実ブラウザでは通るが jsdom だけ落ちる」状態になります。
+Story が増えるほど事故が増えるので、環境差は setup ファイル 1 箇所で吸収し、
+Story は標準の書き方（play の引数から受け取る）に統一しています。
+
+## 2. Portable Stories と素の user-event を同じファイルで混ぜると壊れる
+
+**症状**: `TypeError: 'get ownerDocument' called on an object that is not a valid instance of Node.`
+
+```
+HTMLElement.get [as focus]  storybook/dist/csf/index.js
+patchFocus                  @testing-library/user-event/.../patchFocus.js
+setupDirect                 @testing-library/user-event/.../setup.js
+```
+
+**原因**: Storybook は `HTMLElement.prototype.focus` をゲッターに差し替えています。
+そのゲッターは `this.ownerDocument` を参照するため、
+user-event の `patchFocus` がプロトタイプ上のディスクリプタを読んだ瞬間に、
+Node ではないオブジェクトで `ownerDocument` が呼ばれた状態になります。
+
+**対策**: `userEvent` を `storybook/test` から import します。
+Storybook 側で用意された同じインスタンスなので二重パッチが起きず、
+実ブラウザ側の play 関数とも挙動が揃います。
+
+厄介なのは、Vitest がファイル単位で環境を分離するため、
+Story を使わないファイル（`LoginForm.plain.test.tsx`）では
+素の user-event がそのまま動いてしまう点です。
+「動くファイルと動かないファイルが混在する」状態になります。
+Portable Stories を採用するなら、プロジェクト全体で
+`storybook/test` の `userEvent` に統一しておくのが安全です。
+
+## 3. run() と render() を併用すると二重にマウントされる
+
+`composeStories` が返す Story の `run()` は描画と play の実行をまとめて行います。
+`render()` を併用すると二重にマウントされ、
+`screen`（document.body 全体が対象）のクエリが両方を拾って
+「Found multiple elements」で落ちます。
+
+`src/test/portable.ts` の `runStory` は、テストごとに独立したコンテナを渡し、
+後始末までを引き受けることでこれを防いでいます。
+
+## 4. Testing Library の自動クリーンアップは globals: true のときだけ
+
+`globals: true` にしていない構成では、Testing Library は `afterEach` を自動登録しません。
+明示的に `afterEach(cleanup)` を呼ばないと前のテストの DOM が残り、
+やはり「Found multiple elements」で落ちます。
+
+## 5. form に noValidate がないとブラウザ側だけ落ちる
+
+`LoginForm` の `<form>` には `noValidate` を付けています。
+
+付けないと、実ブラウザではブラウザ標準のバリデーションが submit を止めてしまい、
+自前のエラー表示まで到達しません。jsdom では標準バリデーションが動かないため、
+**jsdom では通るのに実ブラウザでは落ちる**という、上の 1〜4 とは逆向きの差になります。
+
+同じ Story を両方の環境で走らせていると、この種の食い違いが早期に見つかります。
+これは手法を重ねることの実利のひとつです。

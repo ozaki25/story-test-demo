@@ -1,0 +1,66 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="解説/0. このリポジトリについて" />
+
+# Story を使ったコンポーネントテストの比較
+
+React コンポーネントに Story を書き、その Story を土台にした複数のテスト手法を
+同じ題材で書き比べるためのリポジトリです。技術選定の材料にすることを目的にしています。
+
+「動くサンプル」ではなく「比べられるサンプル」を目指しているので、
+どの手法でも**同じシナリオ**を実装しています。
+
+## 比較の土台になるシナリオ
+
+`LoginForm` に対して、次の 3 つを固定しています。
+
+| ID | シナリオ |
+|---|---|
+| S1 | 空のまま送信するとエラーメッセージが出る |
+| S2 | 正しく入力して送信すると `onSubmit` が正しい値で呼ばれる |
+| S3 | 送信中はフォームが操作できない |
+
+同じことをやらせているので、記述量・読みやすさ・実行速度・壊れやすさを直接比較できます。
+
+## 収録している手法
+
+| # | 手法 | 実行環境 | 書く場所 |
+|---|---|---|---|
+| ① | `play` 関数 | 実ブラウザ | `*.stories.tsx` |
+| ② | 全 Story のスモークテスト | 実ブラウザ | 書かなくてよい（Story を書けば増える） |
+| ③ | a11y（axe） | 実ブラウザ | `parameters.a11y` |
+| ④ | Portable Stories | jsdom | `*.portable.test.tsx` |
+| 対照群 | 素の Testing Library | jsdom | `*.plain.test.tsx` |
+
+2026 年 8 月時点で、本番で採用しうるものだけに絞っています。
+Storybook 8 で削除された storyshots、更新の止まっている vitest-axe、
+Vite 構成では出番のない test-runner は入れていません。
+
+## ディレクトリ構成
+
+コンポーネント単位でディレクトリを切り、手法はファイル名のサフィックスで表しています。
+
+```
+src/components/LoginForm/
+  LoginForm.tsx
+  LoginForm.stories.tsx          ① play 関数 / ② スモーク / ③ a11y
+  LoginForm.portable.test.tsx    ④ Portable Stories
+  LoginForm.plain.test.tsx       対照群
+  index.ts
+```
+
+手法別にディレクトリを切る構成（`tests/play/`, `tests/portable/`）は採っていません。
+コンポーネントが増えたときに、1 つのコンポーネントの情報が複数の場所に散るためです。
+サフィックスを全コンポーネントで統一しているので、
+`src/**/*.portable.test.tsx` のような glob で手法単位の横断実行もできます。
+
+## テストの実行
+
+```bash
+npm run test          # 全部
+npm run test:stories  # 実ブラウザ（①②③）
+npm run test:unit     # jsdom（④と対照群）
+```
+
+Vitest の project を実行環境で分けているので、片方だけを回せます。
+CI での並列化や部分実行がしやすくなります。

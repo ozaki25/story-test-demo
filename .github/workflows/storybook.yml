@@ -1,0 +1,77 @@
+name: Test and deploy Storybook
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 実ブラウザ（storybook project）と jsdom（unit project）の両方を回す。
+  # 手法ごとの実行時間の差は、この job のログで確認できる。
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # storybook project は Chromium を実際に起動する。
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - run: npm run typecheck
+
+      - name: Run tests (browser + jsdom)
+        run: npm test
+
+  # master への push でのみ GitHub Pages に公開する。
+  # 事前にリポジトリの Settings > Pages で Source を "GitHub Actions" にしておくこと。
+  deploy:
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    needs: test
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # 出力される storybook-static はアセットを相対パスで参照するため、
+      # Pages のサブパス配信（https://<user>.github.io/<repo>/）でも base 設定は不要。
+      - name: Build Storybook
+        run: npm run build-storybook
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: storybook-static
+
+      - id: deployment
+        uses: actions/deploy-pages@v5

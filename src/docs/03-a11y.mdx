@@ -1,0 +1,67 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="解説/3. a11y（axe）" />
+
+# 手法③ a11y（axe）
+
+`@storybook/addon-a11y` を入れると、各 Story に対して axe が実行されます。
+Storybook の UI 上では違反が一覧表示され、
+`npm run test:stories` では違反をテスト失敗として扱えます。
+
+## 設定
+
+`.storybook/preview.tsx` で全体の既定値を決めます。
+
+```tsx
+const preview: Preview = {
+  parameters: {
+    a11y: { test: 'error' },
+  },
+};
+```
+
+| 値 | 挙動 |
+|---|---|
+| `'error'` | 違反があればテストを失敗させる |
+| `'todo'` | 違反を報告するがテストは失敗させない |
+| `'off'` | 検査しない |
+
+Story 単位で上書きできます。
+
+## 段階導入の使い方
+
+既存プロジェクトに a11y チェックを入れると、最初は大量に違反が出るのが普通です。
+このとき全体を `'off'` にすると、いつまでも導入されません。
+
+そこで**全体は `'error'`、直せていない箇所だけ `'todo'`** にします。
+`'todo'` が付いている Story が返済対象の一覧になり、減っていく様子が見えます。
+
+`src/components/Button/Button.stories.tsx` の `IconOnlyWithoutLabel` がその例です。
+中身が `aria-hidden` なので支援技術から見ると名前がなく、
+axe の `button-name` ルールに違反します。
+
+```tsx
+export const IconOnlyWithoutLabel: Story = {
+  args: { children: <span aria-hidden="true">✕</span> },
+  parameters: { a11y: { test: 'todo' } },
+};
+```
+
+## 実際に効いていることの確認
+
+この Story の `test` を `'error'` に変えると、次のように失敗します。
+
+```
+Expected the HTML found at $('.btn') to have no violations:
+"Buttons must have discernible text (button-name)"
+https://dequeuniversity.com/rules/axe/4.13/button-name
+```
+
+`'todo'` に戻すと通ります。設定が名前だけの飾りになっていないことを確認済みです。
+
+## 限界
+
+axe が自動検出できるのはアクセシビリティ上の問題の一部です。
+読み上げ順序の妥当性、代替テキストの内容が適切かどうか、
+キーボード操作の流れが自然かどうかは機械的には判定できません。
+「axe が通る＝アクセシブル」ではない、という前提で使ってください。

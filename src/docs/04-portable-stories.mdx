@@ -1,0 +1,72 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="解説/4. Portable Stories" />
+
+# 手法④ Portable Stories
+
+`composeStories` は Story ファイルの各 export を、
+そのまま描画できる React コンポーネントに変換します。
+args・decorators・parameters が適用された状態で、jsdom のテストから使えます。
+
+対象ファイル: `src/components/LoginForm/LoginForm.portable.test.tsx`
+
+ブラウザを起動しないので実行が速く（このリポジトリでは jsdom 2.8 秒に対し実ブラウザ 13 秒）、
+そのぶんレイアウトや実ブラウザ固有の挙動は検証できません。
+
+## 使い方 A: Story の play 関数を再実行する
+
+テストの中身を書きません。検証はすべて Story 側にあります。
+
+```tsx
+const { EmptySubmitShowsErrors } = composeStories(stories);
+
+test('S1 空のまま送信するとエラーが出る', async () => {
+  await runStory(EmptySubmitShowsErrors);
+});
+```
+
+同じ検証が実ブラウザと jsdom の両方で走ります。
+普段は速い jsdom で回し、CI では実ブラウザでも回す、といった使い分けができます。
+
+`runStory` は `src/test/portable.ts` の小さなヘルパーです。
+Story の `run()`（描画と play の実行をまとめて行う）を、
+テストごとに独立したコンテナで呼び、後始末までを引き受けます。
+
+## 使い方 B: Story を入力の定義として再利用する
+
+Story の args を土台に、props を上書きして検証をテスト側に書きます。
+
+```tsx
+test('S2 送信後もフォームの値は保持される', async () => {
+  const onSubmit = vi.fn();
+  render(<Default onSubmit={onSubmit} />);
+  // ... 検証はここに書く
+});
+```
+
+「Storybook のカタログに載せるほどではないが検証はしたい」ものの置き場所になります。
+
+## 前提になる配線
+
+`src/test/setup.unit.ts` で `setProjectAnnotations` を呼び、
+`.storybook/preview.tsx` のアノテーションを jsdom 側にも適用しています。
+
+```ts
+const annotations = setProjectAnnotations([previewAnnotations]);
+beforeAll(annotations.beforeAll);
+```
+
+これを繋いでいないと decorator や parameters が適用されず、
+「Storybook 上では動くのにテストだけ落ちる」状態になります。
+コンポーネントが増えるほど原因の特定が面倒になるので、最初に入れておくべき配線です。
+
+配線が生きていること自体を検証するテストを 1 本置いてあります
+（`preview.tsx の decorator が適用されている`）。
+
+## 実ブラウザ側との違い
+
+`@storybook/addon-vitest` は同等のセットアップを自動注入するため、
+実ブラウザ側（storybook project）にこの配線は不要です。
+jsdom 側だけが手当てを必要とします。
+
+jsdom 特有の落とし穴が 2 つあります。詳細は「5. 落とし穴」を参照してください。
