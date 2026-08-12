@@ -23,20 +23,18 @@ import * as stories from "./Button.stories";
  * 速度が要るなら jsdom 側だけを回し、確からしさが要るなら実ブラウザ側も回す、
  * という使い分けが Story 1 つで両立する。
  */
-const { Primary, Secondary, Danger, Small, Large, Disabled, Loading } = composeStories(stories);
+const { Playground, AllVariants, AllSizes, Disabled, Loading } = composeStories(stories);
 
 describe("使い方A: Story をそのまま jsdom で描画する", () => {
   test.each([
-    ["プライマリ", Primary],
-    ["セカンダリ", Secondary],
-    ["危険な操作", Danger],
-    ["サイズ小", Small],
-    ["サイズ大", Large],
-    ["無効", Disabled],
-    ["処理中", Loading],
-  ])("%s が描画できる", async (_name, Story) => {
+    ["Playground", Playground, 1],
+    ["AllVariants", AllVariants, 3],
+    ["AllSizes", AllSizes, 3],
+    ["Disabled", Disabled, 1],
+    ["Loading", Loading, 1],
+  ])("%s が描画できる", async (_name, Story, expectedButtons) => {
     const canvas = await runStory(Story);
-    expect(canvas.querySelector("button")).toBeInTheDocument();
+    expect(canvas.querySelectorAll("button")).toHaveLength(expectedButtons);
   });
 });
 
@@ -53,7 +51,7 @@ describe("使い方B: Story を入力の定義として再利用し、検証は�
 
   test("Story の args を上書きして onClick を検証する", async () => {
     const onClick = fn();
-    render(<Primary onClick={onClick} />);
+    render(<Playground onClick={onClick} />);
 
     await userEvent.click(screen.getByRole("button", { name: "ボタン" }));
 

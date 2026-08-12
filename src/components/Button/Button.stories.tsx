@@ -13,6 +13,13 @@ import { Button } from "./Button";
 // addon-vitest は Story を 1 件 1 テストとして登録し、play 関数がない Story は
 // 「描画が例外を投げずに完了するか」を検証する。addon-a11y により axe も実行される。
 //
+// LoginForm と違い、インタラクション専用の Story（tags: ["!dev"]）は 1 つもない。
+// ここにあるのはすべて「その状態を見る」ための Story なので、分ける必要がない。
+//
+// 命名は variant の値に揃えている。
+// 「プライマリ」「セカンダリ」と並べたところに「危険な操作」のような
+// 用途の説明を混ぜると、何を基準に並んでいるのかが読み取れなくなる。
+//
 // この注記を JSDoc（/** */）で書かない理由は LoginForm.stories.tsx を参照。
 
 /** autodocs のコンポーネント説明。Markdown として描画されるので記法に沿って書く。 */
@@ -36,10 +43,32 @@ const meta = {
   },
   args: {
     children: "ボタン",
+    variant: "primary",
+    size: "medium",
+    disabled: false,
+    loading: false,
   },
   argTypes: {
-    variant: { control: "inline-radio", options: ["primary", "secondary", "danger"] },
-    size: { control: "inline-radio", options: ["sm", "md", "lg"] },
+    variant: {
+      control: "select",
+      options: ["primary", "secondary", "danger"],
+      description: "見た目のバリエーション",
+    },
+    size: {
+      // Union 型の control は select で統一する。
+      // 値は略称を使わず small / medium / large と書く。
+      control: "select",
+      options: ["small", "medium", "large"],
+      description: "サイズ",
+    },
+    disabled: {
+      control: "boolean",
+      description: "無効化。フォーカスもできなくなる",
+    },
+    loading: {
+      control: "boolean",
+      description: "処理中。押下は止まるがフォーカスは保つ",
+    },
   },
 } satisfies Meta<typeof Button>;
 
@@ -47,37 +76,61 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Primary: Story = {
-  name: "プライマリ",
+/** Controls からすべての props を操作できる。動作を試すための入口。 */
+export const Playground: Story = {};
+
+/** variant を並べて見比べる。 */
+export const AllVariants: Story = {
+  render: (args) => (
+    <div className="flex items-center gap-2">
+      <Button {...args} variant="primary">
+        primary
+      </Button>
+      <Button {...args} variant="secondary">
+        secondary
+      </Button>
+      <Button {...args} variant="danger">
+        danger
+      </Button>
+    </div>
+  ),
+  parameters: {
+    controls: { exclude: ["variant", "children"] },
+  },
 };
 
-export const Secondary: Story = {
-  name: "セカンダリ",
-  args: { variant: "secondary" },
+/** size を並べて見比べる。 */
+export const AllSizes: Story = {
+  render: (args) => (
+    <div className="flex items-center gap-2">
+      <Button {...args} size="small">
+        small
+      </Button>
+      <Button {...args} size="medium">
+        medium
+      </Button>
+      <Button {...args} size="large">
+        large
+      </Button>
+    </div>
+  ),
+  parameters: {
+    controls: { exclude: ["size", "children"] },
+  },
 };
 
-export const Danger: Story = {
-  name: "危険な操作",
-  args: { variant: "danger" },
-};
-
-export const Small: Story = {
-  name: "サイズ小",
-  args: { size: "sm" },
-};
-
-export const Large: Story = {
-  name: "サイズ大",
-  args: { size: "lg" },
-};
-
+/** 無効化した状態。フォーカスもできない。 */
 export const Disabled: Story = {
-  name: "無効",
   args: { disabled: true },
 };
 
+/**
+ * 処理中の状態。
+ *
+ * `disabled` とは異なり、押下は止まるがフォーカスは保たれる。
+ * DOM には `aria-disabled` と `data-pending` が付き、`disabled` 属性は付かない。
+ */
 export const Loading: Story = {
-  name: "処理中",
   args: { loading: true },
 };
 
@@ -95,7 +148,6 @@ export const Loading: Story = {
  * 逃げ道ではなく、返済対象を可視化するための仕組みとして使う。
  */
 export const IconOnlyWithoutLabel: Story = {
-  name: "アイコンのみ（a11y違反を todo として許容）",
   args: {
     children: <span aria-hidden="true">✕</span>,
   },

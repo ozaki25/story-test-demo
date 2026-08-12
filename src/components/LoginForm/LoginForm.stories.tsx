@@ -20,6 +20,12 @@ import { LoginForm } from "./LoginForm";
 // Story にすると一覧性を損なうだけなので、validateLoginForm.test.ts で
 // 純粋関数として検証している。判断の根拠は「解説/8. テスト設計」を参照。
 //
+// 命名の方針:
+//   カタログに出る Story は export 名をそのまま使う（アッパーキャメルケース）。
+//   Button 側と揃えるため、日本語の name は付けない。
+//   インタラクション専用の Story は非表示なのでカタログに影響せず、
+//   テスト結果に出たときに何を検証したか分かるよう、ケース ID を含む名前にしている。
+//
 // この注記を JSDoc（/** */）で書かないこと。
 // meta の直前の JSDoc は autodocs のコンポーネント説明として Markdown 描画され、
 // 区切り線が見出し記法と解釈されて崩れる。公開する説明は下の
@@ -81,15 +87,12 @@ const VALID = { email: "user@example.com", password: "password123" };
 /**
  * play 関数なし。手法②（描画が通るか）と手法③（axe）だけが働く Story。
  */
-export const Default: Story = {
-  name: "初期表示",
-};
+export const Default: Story = {};
 
 /**
  * T1 / D4: 空のまま送信する。email と password の両方が不正なケースでもある。
  */
 export const ValidationErrors: Story = {
-  name: "入力エラー表示",
   play: async ({ canvas, userEvent, args, step }) => {
     await step("空のままログインボタンを押す", async () => {
       await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
@@ -202,7 +205,6 @@ export const RecoverFromError: Story = {
  * 「非同期処理の途中の状態」を Story として残せるのが、args で外側を差し替えられる利点。
  */
 export const Submitting: Story = {
-  name: "送信中",
   args: { onSubmit: fn(never) },
   play: async ({ canvas, userEvent, step }) => {
     await step("正しい値を入力して送信する", async () => {
@@ -256,7 +258,6 @@ export const SubmitSucceeds: Story = {
  * ケースを先に洗い出したことで見つかった不具合。
  */
 export const SubmitFailed: Story = {
-  name: "送信失敗",
   args: {
     onSubmit: fn(async () => {
       throw new Error("network error");
