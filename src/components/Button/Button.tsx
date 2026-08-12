@@ -26,9 +26,9 @@ const button = tv({
       danger: "bg-red-700 text-white",
     },
     size: {
-      small: "px-2.5 py-1 text-xs",
-      medium: "px-4 py-2 text-sm",
-      large: "px-5 py-3 text-base",
+      sm: "px-2.5 py-1 text-xs",
+      md: "px-4 py-2 text-sm",
+      lg: "px-5 py-3 text-base",
     },
     // ここから下は RAC の render props をそのまま variants として受ける。
     // data-[hovered]: のようなモディファイアでも書けるが、
@@ -49,7 +49,7 @@ const button = tv({
   ],
   defaultVariants: {
     variant: "primary",
-    size: "medium",
+    size: "md",
   },
 });
 

@@ -16,9 +16,9 @@ import { Button } from "./Button";
 // LoginForm と違い、インタラクション専用の Story（tags: ["!dev"]）は 1 つもない。
 // ここにあるのはすべて「その状態を見る」ための Story なので、分ける必要がない。
 //
-// 命名は variant の値に揃えている。
-// 「プライマリ」「セカンダリ」と並べたところに「危険な操作」のような
-// 用途の説明を混ぜると、何を基準に並んでいるのかが読み取れなくなる。
+// 命名は CSF の慣習どおり export 名をそのまま Story 名にしている。
+// 日本語の name を付けて「プライマリ」「セカンダリ」「危険な操作」と並べると、
+// variant の名前と用途の説明が混ざり、何を基準に並んでいるのか読み取れなくなる。
 //
 // この注記を JSDoc（/** */）で書かない理由は LoginForm.stories.tsx を参照。
 
@@ -43,22 +43,17 @@ const meta = {
   },
   args: {
     children: "ボタン",
-    variant: "primary",
-    size: "medium",
-    disabled: false,
-    loading: false,
   },
   argTypes: {
     variant: {
-      control: "select",
+      // 選択肢が少ないので、全部が一度に見える inline-radio にしている。
+      control: "inline-radio",
       options: ["primary", "secondary", "danger"],
       description: "見た目のバリエーション",
     },
     size: {
-      // Union 型の control は select で統一する。
-      // 値は略称を使わず small / medium / large と書く。
-      control: "select",
-      options: ["small", "medium", "large"],
+      control: "inline-radio",
+      options: ["sm", "md", "lg"],
       description: "サイズ",
     },
     disabled: {
@@ -76,47 +71,24 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Controls からすべての props を操作できる。動作を試すための入口。 */
-export const Playground: Story = {};
-
-/** variant を並べて見比べる。 */
-export const AllVariants: Story = {
-  render: (args) => (
-    <div className="flex items-center gap-2">
-      <Button {...args} variant="primary">
-        primary
-      </Button>
-      <Button {...args} variant="secondary">
-        secondary
-      </Button>
-      <Button {...args} variant="danger">
-        danger
-      </Button>
-    </div>
-  ),
-  parameters: {
-    controls: { exclude: ["variant", "children"] },
-  },
+export const Primary: Story = {
+  args: { variant: "primary" },
 };
 
-/** size を並べて見比べる。 */
-export const AllSizes: Story = {
-  render: (args) => (
-    <div className="flex items-center gap-2">
-      <Button {...args} size="small">
-        small
-      </Button>
-      <Button {...args} size="medium">
-        medium
-      </Button>
-      <Button {...args} size="large">
-        large
-      </Button>
-    </div>
-  ),
-  parameters: {
-    controls: { exclude: ["size", "children"] },
-  },
+export const Secondary: Story = {
+  args: { variant: "secondary" },
+};
+
+export const Danger: Story = {
+  args: { variant: "danger" },
+};
+
+export const Small: Story = {
+  args: { size: "sm" },
+};
+
+export const Large: Story = {
+  args: { size: "lg" },
 };
 
 /** 無効化した状態。フォーカスもできない。 */
