@@ -134,3 +134,43 @@ test("S1 空のまま送信するとエラーが出る", async () => {
 手法を採用すると周辺のツール設定にも影響が出る、という一例です。
 ルールを黙って全体で無効化すると、本当に空のテストも見逃すようになります。
 対象ファイルと関数名を限定しておくのが要点です。
+
+## 8. tags を共有定数から展開すると黙って無視される
+
+**症状**: `tags: ["!dev", "!autodocs"]` を付けたのにサイドバーから消えない。
+型エラーも実行時エラーも出ない。
+
+原因は、タグを共有定数に切り出してスプレッドしていたことでした。
+
+```tsx
+// これは効かない
+const interactionOnly = { tags: ["!dev", "!autodocs"] } satisfies Partial<Story>;
+
+export const NoDoubleSubmit: Story = {
+  ...interactionOnly,
+  name: "T6 ...",
+};
+```
+
+```tsx
+// これは効く
+export const NoDoubleSubmit: Story = {
+  tags: ["!dev", "!autodocs"],
+  name: "T6 ...",
+};
+```
+
+Storybook のインデクサは Story ファイルを**静的に解析**して `tags` を読みます。
+実行時の値ではないので、変数を経由すると解決できません。
+そして解決できなかったことは通知されず、既定のタグのまま扱われます。
+
+型は通り、テストも通り、見た目も何も言ってこないので気付きにくい。
+ビルド後の `storybook-static/index.json` で各エントリの `tags` を確認すると分かります。
+
+```bash
+node -e "const j=require('./storybook-static/index.json');
+  Object.values(j.entries).forEach(e=>console.log(e.name, e.tags))"
+```
+
+同じことが `title` や `component` など、インデクサが読む他のフィールドにも当てはまります。
+Story の定義は、共通化したくなっても静的に書ける形に留めておくのが安全です。
