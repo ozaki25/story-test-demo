@@ -2,27 +2,38 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { Button } from "./Button";
 
-/**
- * ============================================================
- * このファイルが示す手法
- *   手法② 全 Story のスモークテスト
- *   手法③ a11y（axe）
- * ============================================================
- *
- * play 関数を 1 つも書いていないことに注目。
- * それでも `npm run test:stories` を実行すると、この Story の数だけテストが増える。
- *
- * @storybook/addon-vitest は Story を 1 件 1 テストとして登録し、
- * play 関数がない Story については「描画が例外を投げずに完了するか」を検証する。
- * さらに addon-a11y が有効なので、各 Story に対して axe も実行される。
- *
- * Button のように「見た目のバリエーションは多いが振る舞いは薄い」コンポーネントでは、
- * 操作を書き下す play 関数よりも、状態を Story として並べるほうが費用対効果が高い。
- * Story を 1 つ足すだけでテストが 1 つ増える、という関係になる。
- */
+// ============================================================
+// このファイルが示す手法（コード読者向けの注記）
+//   手法② 全 Story のスモークテスト
+//   手法③ a11y（axe）
+// ============================================================
+//
+// play 関数を 1 つも書いていないことに注目。
+// それでも npm run test:stories を実行すると、この Story の数だけテストが増える。
+// addon-vitest は Story を 1 件 1 テストとして登録し、play 関数がない Story は
+// 「描画が例外を投げずに完了するか」を検証する。addon-a11y により axe も実行される。
+//
+// この注記を JSDoc（/** */）で書かない理由は LoginForm.stories.tsx を参照。
+
+/** autodocs のコンポーネント説明。Markdown として描画されるので記法に沿って書く。 */
+const DESCRIPTION = [
+  "React Aria Components をラップしたボタン。",
+  "variant と size は tailwind-variants で管理している。",
+  "",
+  "見た目のバリエーションは多いが振る舞いは薄いので、",
+  "操作を書き下す play 関数よりも、状態を Story として並べるほうが費用対効果が高い。",
+  "Story を 1 つ足すだけでテストが 1 つ増える。",
+  "",
+  "`loading` は `disabled` とは別物で、押下は止まるがフォーカスは保つ。",
+  "詳細は Button.tsx のコメントを参照。",
+].join("\n");
+
 const meta = {
   title: "components/Button",
   component: Button,
+  parameters: {
+    docs: { description: { component: DESCRIPTION } },
+  },
   args: {
     children: "ボタン",
   },
