@@ -4,8 +4,8 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 # 構成と設計判断
 
-大規模化したときに壊れないことを優先して選んだ構成です。
-それぞれ「なぜそうしたか」と「そうしないと何が起きるか」を書いています。
+このリポジトリで採っている構成と、そう決めた理由です。
+それぞれ「そうしなかった場合に何が起きるか」を併記しています。
 
 ## ディレクトリ構成
 
@@ -64,7 +64,7 @@ npm run test:portable  # vitest run --project=unit portable.test
 npm run test:plain     # vitest run --project=unit plain.test
 ```
 
-実際に踏んだ問題です。詳細は「5. 落とし穴」を参照してください。
+実際に踏んだ問題です。詳細は「5. 落とし穴」を参照。
 
 ## 3. 実行環境で Vitest の project を分ける
 
@@ -79,9 +79,8 @@ CI での並列化や部分実行もしやすくなります。
 jsdom 側は `setProjectAnnotations`（`src/test/setup.unit.ts`）で読み込んでいます。
 
 繋いでいないと decorator や parameters が適用されず、
-「Storybook では動くのにテストだけ落ちる」が多発します。
-コンポーネントが増えるほど原因の特定が面倒になるので、
-**その配線自体を検証するテストを 1 本置いています**
+「Storybook では動くのにテストだけ落ちる」状態になります。
+この配線自体を検証するテストを 1 本置いています
 （`LoginForm.portable.test.tsx` の「preview.tsx の decorator が適用されている」）。
 
 ## 5. 環境差は setup ファイル 1 箇所で吸収する
@@ -89,19 +88,17 @@ jsdom 側は `setProjectAnnotations`（`src/test/setup.unit.ts`）で読み込�
 jsdom には `navigator.clipboard` がなく、そのままでは play 関数の引数から
 `userEvent` を受け取れません。
 
-Story 側で `storybook/test` の `userEvent` を import して回避することもできますが、
-その方針だと import を書き忘れた Story が
-「実ブラウザでは通るが jsdom だけ落ちる」状態になります。
-Story が増えるほど事故が増えるので、Story は標準の書き方に統一し、
-差分は setup で埋めています。
+Story 側で `storybook/test` の `userEvent` を import して回避することもできます。
+その場合、import を書き忘れた Story は実ブラウザでは通り jsdom だけ落ちます。
+ここでは Story を play の引数から受け取る書き方に統一し、差分は setup で埋めています。
 
 ## スタイル: Tailwind CSS v4
 
 設定は `src/styles/global.css` の `@theme` に書き、`tailwind.config.js` は使いません。
 Vite プラグイン（`@tailwindcss/vite`）を `vite.config.ts` に入れてあるので、
-Storybook もテストも同じ設定を読みます。設定を 1 ファイルにまとめた効果がここに出ます。
+Storybook もテストも同じ設定を読みます。
 
-バリアントごとのクラスはオブジェクトへ切り出してください。
+バリアントごとのクラスはオブジェクトに切り出しています。
 
 ```tsx
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
@@ -118,11 +115,9 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
 `oxlint` と `oxfmt` を使っています。react / jsx-a11y / import / promise / vitest の
 プラグインを有効にしています。
 
-**`eslint-plugin-storybook` 相当のルールは oxlint にありません。**
-play 関数の await 漏れのような Story 固有の間違いは検出できないので、
-そこを重視するなら ESLint を併用する判断もあります。
+`eslint-plugin-storybook` 相当のルールは oxlint にありません
+（`npx oxlint --rules` に storybook 関連の項目は 0 件）。
+play 関数の await 漏れのような Story 固有の間違いは検出されません。
 
-なお oxlint は導入直後に、手法④のテストを
-「アサーションのないテスト」として指摘してきました。
-その対処は「5. 落とし穴」に書いています。
-手法の選択が周辺のツール設定にも波及する、という例です。
+導入直後、oxlint は手法④のテストを「アサーションのないテスト」として報告しました。
+対処は「5. 落とし穴」に書いています。

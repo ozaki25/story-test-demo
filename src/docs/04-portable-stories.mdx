@@ -63,7 +63,6 @@ beforeAll(annotations.beforeAll);
 
 これを繋いでいないと decorator や parameters が適用されず、
 「Storybook 上では動くのにテストだけ落ちる」状態になります。
-コンポーネントが増えるほど原因の特定が面倒になるので、最初に入れておくべき配線です。
 
 配線が生きていること自体を検証するテストを 1 本置いてあります
 （`preview.tsx の decorator が適用されている`）。
@@ -74,4 +73,4 @@ beforeAll(annotations.beforeAll);
 実ブラウザ側（storybook project）にこの配線は不要です。
 jsdom 側だけが手当てを必要とします。
 
-jsdom 特有の落とし穴が 2 つあります。詳細は「5. 落とし穴」を参照してください。
+jsdom 特有の落とし穴が 2 つあります。詳細は「5. 落とし穴」を参照。
