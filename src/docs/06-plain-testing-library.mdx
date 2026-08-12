@@ -1,0 +1,92 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="解説/6. 方式B テストファイルに書く" />
+
+# 方式B テストファイルに書く
+
+Story を使わず、コンポーネントを直接 import して Testing Library で検証します。
+方式A（Story に書く）の競合案で、どちらか一方を採用すればもう一方は消えます。
+
+対象ファイル: `src/components/LoginForm/LoginForm.plain.test.tsx`
+
+このリポジトリでは、方式Aが持つケース（T1〜T6・D1〜D4・K1）を
+すべてこちらにも実装しています。一部だけを分担すると、
+この方式単独で運用できるかどうかが判断できないためです。
+
+## 書き方
+
+```tsx
+test("T1 空のまま送信すると両方にエラーが出る", async () => {
+  const { onSubmit } = setup();
+
+  await userEvent.click(screen.getByRole("button", { name: "ログイン" }));
+
+  expect(screen.getByText("メールアドレスを入力してください")).toBeInTheDocument();
+  expect(screen.getByText("パスワードを入力してください")).toBeInTheDocument();
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+```
+
+Storybook に依存しないので、`render` も `screen` も `userEvent` も
+Testing Library のものをそのまま使います。
+
+## 準備の置き場所
+
+方式Aでは Story の `args` が担っていた準備を、テストファイル側に置きます。
+
+```tsx
+function setup(onSubmit: SubmitFn = vi.fn<SubmitFn>()) {
+  const spy = vi.fn<SubmitFn>(onSubmit);
+  render(<LoginForm onSubmit={spy} />);
+  return { onSubmit: spy };
+}
+
+async function fillValidValues() {
+  await userEvent.type(screen.getByLabelText("メールアドレス"), VALID.email);
+  await userEvent.type(screen.getByLabelText("パスワード"), VALID.password);
+}
+```
+
+送信中の状態を作る仕掛けも、Story の `args` ではなくテスト側に書きます。
+
+```tsx
+const never = () => new Promise<void>(() => {});
+
+test("T3 送信中はフォームが操作できない", async () => {
+  setup(never);
+  // ...
+});
+```
+
+## この方式で残るもの・残らないもの
+
+検証した状態は Storybook に残りません。
+`LoginForm` の Story は「初期表示」だけになります。
+
+その結果、スモークテストと a11y の対象も初期表示 1 件になります。
+エラー表示中・送信中・失敗表示中のアクセシビリティは検査されません
+（件数の比較は「2. 選択肢と比較」を参照）。
+
+## 実行環境
+
+jsdom で動きます。実ブラウザで動かす構成にすることもできますが、
+このリポジトリでは jsdom で計測しています。
+
+jsdom では検出できない差があります。`<form>` の `noValidate` を外しても
+jsdom では標準バリデーションが動かないため通ってしまう、といった例です
+（「3. 環境差と落とし穴」を参照）。
+
+## 素の user-event が使えること
+
+このファイルは Portable Stories を一切使わないため、
+`@testing-library/user-event` をそのまま使えます。
+
+同じファイルに Portable Stories を持ち込むと、Storybook による
+`HTMLElement.prototype.focus` のパッチと衝突して壊れます。
+方式Bを選ぶ場合はこの問題が起きません（詳細は「3. 環境差と落とし穴」）。
+
+## 方式の選択と独立なもの
+
+描画を伴わない検証（V1〜V8）は、この方式を採用するかどうかと無関係です。
+`validateLoginForm.test.ts` に独立させてあるので、
+方式Bを消しても残ります。

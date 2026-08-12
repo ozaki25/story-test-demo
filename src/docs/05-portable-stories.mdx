@@ -1,8 +1,8 @@
 import { Meta } from "@storybook/addon-docs/blocks";
 
-<Meta title="解説/4. Portable Stories" />
+<Meta title="解説/5. 方式A jsdom で回す" />
 
-# 手法④ Portable Stories
+# 方式A jsdom で回す
 
 `composeStories` は Story ファイルの各 export を、
 そのまま描画できる React コンポーネントに変換します。
@@ -11,7 +11,7 @@ args・decorators・parameters が適用された状態で、jsdom のテスト�
 対象ファイル: `src/components/LoginForm/LoginForm.portable.test.tsx`
 
 ブラウザを起動しないので実行が速く、そのぶんレイアウトや実ブラウザ固有の挙動は検証できません。
-実測値は「6. 比較と使い分け」にまとめてあります。
+実測値は「2. 選択肢と比較」にまとめてあります。
 
 ## 使い方 A: Story の play 関数を再実行する
 
@@ -73,4 +73,4 @@ beforeAll(annotations.beforeAll);
 実ブラウザ側（storybook project）にこの配線は不要です。
 jsdom 側だけが手当てを必要とします。
 
-jsdom 特有の落とし穴が 2 つあります。詳細は「5. 落とし穴」を参照。
+jsdom 特有の落とし穴が 2 つあります。詳細は「3. 環境差と落とし穴」を参照。

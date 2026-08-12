@@ -1,0 +1,118 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="解説/7. どちらでも足せるもの" />
+
+# どちらでも足せるもの
+
+方式A（Story に書く）と方式B（テストファイルに書く）のどちらを選んでも足せる 2 つです。
+ただし得られる件数は、Story がいくつあるかに比例します。方式Bでは Story が
+「初期表示」しか残らないため、どちらも 1 件分しか得られません（「2. 選択肢と比較」参照）。
+
+## 全 Story のスモークテスト
+
+`@storybook/addon-vitest` は `.storybook/main.ts` の `stories` に一致する Story を検出し、
+**1 Story = 1 テストケース**として Vitest に登録します。
+
+`play` 関数がある Story はそれが実行され、ない Story は
+「描画が例外を投げずに完了するか」が検証されます。
+
+対象ファイル: `src/components/Button/Button.stories.tsx`
+
+### Story の数がそのままテストの数になる
+
+`Button.stories.tsx` には `play` 関数が 1 つもありません。
+それでも `npm run test:stories` を実行すると、Story の数だけテストが登録されます。
+
+Story を 1 つ足すと、カタログが 1 つ増え、同時にテストも 1 つ増えます。
+テストコードを別に書く必要はありません。
+
+### 何を検出できるか
+
+描画時に例外を投げる類の壊れ方は、これだけで拾えます。
+
+- props の必須指定漏れ、型の変更に追随できていない Story
+- 依存コンポーネントの破壊的変更
+- Context や Provider の不足
+- 条件分岐の片側だけが壊れているケース（その状態の Story があれば）
+
+### 何を検出できないか
+
+検出できる範囲は「描画が完了するかどうか」に限られます。
+文言、計算結果、条件分岐の中身を検証するには `play` 関数を書く必要があります。
+
+## a11y（axe）
+
+`@storybook/addon-a11y` を入れると、各 Story に対して axe が実行されます。
+Storybook の UI 上では違反が一覧表示され、
+`npm run test:stories` では違反をテスト失敗として扱えます。
+
+### 設定
+
+`.storybook/preview.tsx` で全体の既定値を決めます。
+
+```tsx
+const preview: Preview = {
+  parameters: {
+    a11y: { test: "error" },
+  },
+};
+```
+
+| 値        | 挙動                                 |
+| --------- | ------------------------------------ |
+| `'error'` | 違反があればテストを失敗させる       |
+| `'todo'`  | 違反を報告するがテストは失敗させない |
+| `'off'`   | 検査しない                           |
+
+Story 単位で上書きできます。
+
+### 段階導入の使い方
+
+既存プロジェクトに a11y チェックを入れると、最初は大量に違反が出ます。
+このとき全体を `'off'` にすると、いつまでも導入されません。
+
+全体を `'error'` にしたうえで、直せていない箇所だけ `'todo'` にすると、
+`'todo'` が付いている Story が返済対象の一覧になります。
+
+`src/components/Button/Button.stories.tsx` の `IconOnlyWithoutLabel` がその例です。
+中身が `aria-hidden` なので支援技術から見ると名前がなく、
+axe の `button-name` ルールに違反します。
+
+```tsx
+export const IconOnlyWithoutLabel: Story = {
+  args: { children: <span aria-hidden="true">✕</span> },
+  parameters: { a11y: { test: "todo" } },
+};
+```
+
+### 実際に効いていることの確認
+
+この Story の `test` を `'error'` に変えると、次のように失敗します。
+
+```
+Expected the HTML found at $('.btn') to have no violations:
+"Buttons must have discernible text (button-name)"
+https://dequeuniversity.com/rules/axe/4.13/button-name
+```
+
+`'todo'` に戻すと通ります。
+
+### 限界
+
+axe が自動検出できるのはアクセシビリティ上の問題の一部です。
+読み上げ順序の妥当性、代替テキストの内容が適切かどうか、
+キーボード操作の流れが自然かどうかは機械的には判定されません。
+
+### 検査範囲
+
+axe は既定でページ全体を見るため、Story の描画範囲外にある要素も対象になります。
+react-aria は状態変化を読み上げるためのライブリージョンをページ側に挿入し、
+それは一度作られると残ります。その中の違反で無関係な Story まで落ちたため、
+`.storybook/preview.tsx` で検査対象から除外しています。
+
+```tsx
+a11y: {
+  test: "error",
+  context: { exclude: '[role="log"][aria-live]' },
+}
+```

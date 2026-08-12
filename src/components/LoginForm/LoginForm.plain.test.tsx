@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 // このファイルは Portable Stories を一切使わないので、素の user-event がそのまま動く。
 // 同じファイルに Portable Stories を持ち込むと、Storybook による
-// HTMLElement.prototype.focus のパッチと衝突して壊れる。詳細は「解説/5. 落とし穴」を参照。
+// HTMLElement.prototype.focus のパッチと衝突して壊れる。詳細は「解説/3. 環境差と落とし穴」を参照。
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 
@@ -22,7 +22,7 @@ import { LoginForm, type LoginFormValues } from "./LoginForm";
  *   D1〜D4 … デシジョンテーブル
  *   K1     … キーボードのみの操作経路
  *
- * 導出の根拠は「解説/8. テスト設計」を参照。
+ * 導出の根拠は「解説/1. 何を検証するか」を参照。
  * 描画を伴わない V1〜V8 は方式の選択と独立なので validateLoginForm.test.ts にある。
  *
  * 読み比べたときの違い:

@@ -1,8 +1,8 @@
 import { Meta } from "@storybook/addon-docs/blocks";
 
-<Meta title="解説/5. 落とし穴" />
+<Meta title="解説/3. 環境差と落とし穴" />
 
-# 落とし穴
+# 環境差と落とし穴
 
 このリポジトリを組む過程で実際に踏んだものだけを載せています。
 いずれも「実ブラウザでは通るが jsdom では落ちる」形で現れるため、
@@ -101,7 +101,7 @@ npm test          → Test Files 4 passed, Tests 27 passed
 手法単位の実行はコマンド側で絞っています（`npm run test:portable`）。
 この形なら、規約から外れた名前のファイルも収集され、中身が壊れていれば落ちます。
 
-## 7. 手法④はリンタから見るとアサーションのないテストに見える
+## 7. 方式A の jsdom 実行はリンタから見るとアサーションのないテストに見える
 
 **症状**: `vitest(expect-expect): Test has no assertions`
 

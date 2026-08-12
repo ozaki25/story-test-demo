@@ -1,8 +1,8 @@
 import { Meta } from "@storybook/addon-docs/blocks";
 
-<Meta title="解説/7. 構成と設計判断" />
+<Meta title="解説/8. このリポジトリの構成" />
 
-# 構成と設計判断
+# このリポジトリの構成
 
 このリポジトリで採っている構成と、そう決めた理由です。
 それぞれ「そうしなかった場合に何が起きるか」を併記しています。
@@ -19,15 +19,15 @@ src/
   components/
     Button/                        振る舞いが薄く、状態のバリエーションが多い例
       Button.tsx
-      Button.stories.tsx           ② スモークテスト / ③ a11y
-      Button.portable.test.tsx     ④ Portable Stories
-      Button.plain.test.tsx        対照群
+      Button.stories.tsx           カタログ（スモークテストと a11y の対象）
+      Button.portable.test.tsx     方式A の jsdom 実行
+      Button.plain.test.tsx        方式B
       index.ts
     LoginForm/                     操作・非同期を伴う例
       LoginForm.tsx
-      LoginForm.stories.tsx        ① play 関数 / ② スモーク / ③ a11y
-      LoginForm.portable.test.tsx  ④ Portable Stories
-      LoginForm.plain.test.tsx     対照群
+      LoginForm.stories.tsx        方式A（play 関数）
+      LoginForm.portable.test.tsx  方式A の jsdom 実行
+      LoginForm.plain.test.tsx     方式B
       index.ts
   docs/                            この解説
   styles/global.css                Tailwind の読み込みとテーマ定義
@@ -64,7 +64,7 @@ npm run test:portable  # vitest run --project=unit portable.test
 npm run test:plain     # vitest run --project=unit plain.test
 ```
 
-実際に踏んだ問題です。詳細は「5. 落とし穴」を参照。
+実際に踏んだ問題です。詳細は「3. 環境差と落とし穴」を参照。
 
 ## 3. 実行環境で Vitest の project を分ける
 
@@ -119,5 +119,5 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
 （`npx oxlint --rules` に storybook 関連の項目は 0 件）。
 play 関数の await 漏れのような Story 固有の間違いは検出されません。
 
-導入直後、oxlint は手法④のテストを「アサーションのないテスト」として報告しました。
-対処は「5. 落とし穴」に書いています。
+導入直後、oxlint は方式A の jsdom 実行のテストを「アサーションのないテスト」として報告しました。
+対処は「3. 環境差と落とし穴」に書いています。

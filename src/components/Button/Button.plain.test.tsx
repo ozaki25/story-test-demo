@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 // このファイルは Portable Stories を使わないので、素の user-event がそのまま動く。
-// 同じファイルに Portable Stories を持ち込むと壊れる。詳細は「解説/5. 落とし穴」を参照。
+// 同じファイルに Portable Stories を持ち込むと壊れる。詳細は「解説/3. 環境差と落とし穴」を参照。
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 
