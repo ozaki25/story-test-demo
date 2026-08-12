@@ -50,7 +50,7 @@ vite.config.ts                     Vite と Vitest の設定（1 ファイルに
 `vite.config.ts` と `vitest.config.ts` に分けると、Storybook は前者、テストは後者を読みます。
 alias や plugin を片方にだけ足したときに
 「Storybook では解決できるがテストでは落ちる」が起きます。
-設定を 1 か所に集約して、その食い違いを構造的に防いでいます。
+設定を 1 か所にまとめて、この食い違いが起きないようにしています。
 
 ## 2. テストの収集条件を手法別サフィックスで絞らない
 
@@ -92,7 +92,7 @@ Story 側で `storybook/test` の `userEvent` を import して回避するこ�
 その場合、import を書き忘れた Story は実ブラウザでは通り jsdom だけ落ちます。
 ここでは Story を play の引数から受け取る書き方に統一し、差分は setup で埋めています。
 
-## スタイル: Tailwind CSS v4
+## スタイルは Tailwind CSS v4
 
 設定は `src/styles/global.css` の `@theme` に書き、`tailwind.config.js` は使いません。
 Vite プラグイン（`@tailwindcss/vite`）を `vite.config.ts` に入れてあるので、
@@ -110,7 +110,7 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
 テンプレートリテラルで組み立てると Tailwind がクラス名を静的に抽出できず、
 本番ビルドでスタイルが落ちます。
 
-## リンタ / フォーマッタ: oxc
+## リンタとフォーマッタは oxc
 
 `oxlint` と `oxfmt` を使っています。react / jsx-a11y / import / promise / vitest の
 プラグインを有効にしています。

@@ -4,14 +4,15 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 # どちらでも足せるもの
 
-方式A（Story に書く）と方式B（テストファイルに書く）のどちらを選んでも足せる 2 つです。
-ただし得られる件数は、Story がいくつあるかに比例します。方式Bでは Story が
-「初期表示」しか残らないため、どちらも 1 件分しか得られません（「2. 選択肢と比較」参照）。
+全 Story のスモークテストと a11y チェックは、方式A（Story に書く）と
+方式B（テストファイルに書く）のどちらを選んでも足せます。
+ただし得られる件数は Story の数に比例します。方式Bでは Story が「初期表示」しか
+残らないため、どちらも 1 件分しか得られません（「2. 選択肢と比較」参照）。
 
 ## 全 Story のスモークテスト
 
 `@storybook/addon-vitest` は `.storybook/main.ts` の `stories` に一致する Story を検出し、
-**1 Story = 1 テストケース**として Vitest に登録します。
+**Story 1 つをテストケース 1 つ**として Vitest に登録します。
 
 `play` 関数がある Story はそれが実行され、ない Story は
 「描画が例外を投げずに完了するか」が検証されます。
@@ -66,13 +67,10 @@ const preview: Preview = {
 
 Story 単位で上書きできます。
 
-### 段階導入の使い方
-
-既存プロジェクトに a11y チェックを入れると、最初は大量に違反が出ます。
-このとき全体を `'off'` にすると、いつまでも導入されません。
+### 直せていない違反を todo で残す
 
 全体を `'error'` にしたうえで、直せていない箇所だけ `'todo'` にすると、
-`'todo'` が付いている Story が返済対象の一覧になります。
+`'todo'` が付いている Story が未対応の一覧になります。
 
 `src/components/Button/Button.stories.tsx` の `IconOnlyWithoutLabel` がその例です。
 中身が `aria-hidden` なので支援技術から見ると名前がなく、
