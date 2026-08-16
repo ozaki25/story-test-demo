@@ -130,14 +130,14 @@ test("S1 空のまま送信するとエラーが出る", async () => {
 
 ## 8. tags を共有定数から展開すると黙って無視される
 
-**症状**: `tags: ["!dev", "!autodocs"]` を付けたのにサイドバーから消えない。
+**症状**: タグを付けたのにサイドバーの扱いが変わらない。
 型エラーも実行時エラーも出ない。
 
 原因は、タグを共有定数に切り出してスプレッドしていたことでした。
 
 ```tsx
 // これは効かない
-const interactionOnly = { tags: ["!dev", "!autodocs"] } satisfies Partial<Story>;
+const interactionOnly = { tags: ["interaction", "!autodocs"] } satisfies Partial<Story>;
 
 export const NoDoubleSubmit: Story = {
   ...interactionOnly,
@@ -148,7 +148,7 @@ export const NoDoubleSubmit: Story = {
 ```tsx
 // これは効く
 export const NoDoubleSubmit: Story = {
-  tags: ["!dev", "!autodocs"],
+  tags: ["interaction", "!autodocs"],
   name: "T6 ...",
 };
 ```
@@ -163,6 +163,12 @@ Storybook のインデクサは Story ファイルを**静的に解析**して `
 ```bash
 node -e "const j=require('./storybook-static/index.json');
   Object.values(j.entries).forEach(e=>console.log(e.name, e.tags))"
+```
+
+スプレッドに戻して確認したときの出力です。`interaction` も `!autodocs` も残っていません。
+
+```
+T6 送信中に submit が再度発火... ["dev","test","manifest","autodocs","play-fn"]
 ```
 
 `title` や `component` など、インデクサが読む他のフィールドでも同じことが起きます。

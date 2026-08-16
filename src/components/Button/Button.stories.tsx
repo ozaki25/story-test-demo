@@ -13,7 +13,7 @@ import { Button } from "./Button";
 // addon-vitest は Story を 1 件 1 テストとして登録し、play 関数がない Story は
 // 「描画が例外を投げずに完了するか」を検証する。addon-a11y により axe も実行される。
 //
-// LoginForm と違い、インタラクション専用の Story（tags: ["!dev"]）は 1 つもない。
+// LoginForm と違い、インタラクション専用の Story（tags: ["interaction"]）は 1 つもない。
 // ここにあるのはすべて「その状態を見る」ための Story なので、分ける必要がない。
 //
 // 命名は CSF の慣習どおり export 名をそのまま Story 名にしている。

@@ -33,6 +33,15 @@ const config: StorybookConfig = {
     name: "@storybook/react-vite",
     options: {},
   },
+
+  // 検証用の Story に付ける独自タグ。
+  // defaultFilterSelection: "exclude" にすると、サイドバーのタグフィルタで
+  // 既定では畳まれた状態になる。フィルタには "interaction (excluded) 7" のように
+  // 件数が出るので、隠れているものがあること自体は分かり、1 クリックで表示に戻せる。
+  // !dev だと存在ごと UI から消える。
+  tags: {
+    interaction: { defaultFilterSelection: "exclude" },
+  },
 };
 
 export default config;

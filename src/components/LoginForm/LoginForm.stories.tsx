@@ -74,11 +74,16 @@ const never = () => new Promise<void>(() => {});
 
 const VALID = { email: "user@example.com", password: "password123" };
 
-// インタラクション専用の Story には tags: ["!dev", "!autodocs"] を付けている。
+// インタラクション専用の Story には tags: ["interaction", "!autodocs"] を付けている。
 //
-//   !dev      … サイドバーから外す
-//   !autodocs … Docs ページの一覧から外す
-//   test      … 既定で付いたままなので、テストとしては実行され axe も回る
+//   interaction … 独自タグ。main.ts の tags で defaultFilterSelection: "exclude" を
+//                 指定してあるので、サイドバーのタグフィルタで既定は畳まれる。
+//                 フィルタから 1 クリックで表示に戻せる。
+//   !autodocs   … Docs ページの一覧から外す
+//   test        … 既定で付いたままなので、テストとしては実行され axe も回る
+//
+// !dev で完全に隠す手もあるが、その場合は存在自体が UI から消える。
+// 独自タグなら、フィルタに件数が出るので隠れているものがあると分かる。
 //
 // タグは共有定数からスプレッドしないこと。
 // Storybook のインデクサは tags を静的解析するため、変数経由だと読めず、
@@ -113,7 +118,7 @@ export const ValidationErrors: Story = {
  * T3 / D1: 妥当な入力で送信する。
  */
 export const ValidSubmitCallsOnSubmit: Story = {
-  tags: ["!dev", "!autodocs"],
+  tags: ["interaction", "!autodocs"],
   name: "T3・D1 正しく入力して送信すると onSubmit が呼ばれる",
   play: async ({ canvas, userEvent, args, step }) => {
     await step("フォームを入力する", async () => {
@@ -135,7 +140,7 @@ export const ValidSubmitCallsOnSubmit: Story = {
  * D3: email だけが不正。password 側にはエラーを出さない。
  */
 export const InvalidEmailOnly: Story = {
-  tags: ["!dev", "!autodocs"],
+  tags: ["interaction", "!autodocs"],
   name: "D3 メールアドレスだけ不正ならそちらにだけエラーが出る",
   play: async ({ canvas, userEvent, args }) => {
     await userEvent.type(canvas.getByLabelText("メールアドレス"), "not-an-email");
@@ -157,7 +162,7 @@ export const InvalidEmailOnly: Story = {
  * デシジョンテーブルを書いて初めて気付いた抜け。
  */
 export const InvalidPasswordOnly: Story = {
-  tags: ["!dev", "!autodocs"],
+  tags: ["interaction", "!autodocs"],
   name: "D2 パスワードだけ不正ならそちらにだけエラーが出る",
   play: async ({ canvas, userEvent, args }) => {
     await userEvent.type(canvas.getByLabelText("メールアドレス"), VALID.email);
@@ -177,7 +182,7 @@ export const InvalidPasswordOnly: Story = {
  * 状態を持つフォームでは、一度エラーになってから復帰する経路が壊れやすい。
  */
 export const RecoverFromError: Story = {
-  tags: ["!dev", "!autodocs"],
+  tags: ["interaction", "!autodocs"],
   name: "T2 エラー表示後に修正して送信できる",
   play: async ({ canvas, userEvent, args, step }) => {
     await step("空のまま送信してエラーを出す", async () => {
@@ -232,7 +237,7 @@ export const Submitting: Story = {
  * 送信中に入るところまでしか検証していないと、戻ってこない不具合を見逃す。
  */
 export const SubmitSucceeds: Story = {
-  tags: ["!dev", "!autodocs"],
+  tags: ["interaction", "!autodocs"],
   name: "T4 送信に成功すると操作できる状態に戻る",
   args: { onSubmit: fn(async () => {}) },
   play: async ({ canvas, userEvent, step }) => {
@@ -299,7 +304,7 @@ export const SubmitFailed: Story = {
  * その水準に合わせて submit イベントを直接発火させて検証する。
  */
 export const NoDoubleSubmit: Story = {
-  tags: ["!dev", "!autodocs"],
+  tags: ["interaction", "!autodocs"],
   name: "T6 送信中に submit が再度発火しても二重送信されない",
   args: { onSubmit: fn(never) },
   play: async ({ canvas, userEvent, args, step }) => {
@@ -327,7 +332,7 @@ export const NoDoubleSubmit: Story = {
  * 実ブラウザで動かす価値が最も高い種類のケース。
  */
 export const KeyboardOnly: Story = {
-  tags: ["!dev", "!autodocs"],
+  tags: ["interaction", "!autodocs"],
   name: "K1 キーボードだけで入力して送信できる",
   play: async ({ canvas, userEvent, args, step }) => {
     await step("Tab で移動しながら入力する", async () => {
