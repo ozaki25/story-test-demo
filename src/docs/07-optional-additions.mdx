@@ -83,6 +83,32 @@ export const IconOnlyWithoutLabel: Story = {
 };
 ```
 
+### axe は play の後に走る
+
+play で状態を作ってから検査されます。初期表示に違反がなくても、
+操作した結果に違反があれば落ちます。
+
+確かめるために、初期表示には違反がなく、play が名前のないボタンを足す Story を置きました。
+
+```tsx
+export const ViolationAppearsOnlyAfterPlay: Story = {
+  play: async ({ canvasElement }) => {
+    canvasElement.append(document.createElement("button"));
+  },
+};
+```
+
+落ちます。
+
+```
+× Violation Appears Only After Play
+Expected the HTML found at $('div:nth-child(5) > button') to have no violations:
+❯ afterEach @storybook/addon-a11y/.../chunk-P5J2FJ2Z.js:165
+```
+
+そのため、play を書く方式では、エラー表示中・送信中・失敗表示中といった
+操作の結果の状態まで axe の対象になります。件数の比較は「2. 選択肢と比較」を参照。
+
 ### 実際に効いていることの確認
 
 この Story の `test` を `'error'` に変えると、次のように失敗します。

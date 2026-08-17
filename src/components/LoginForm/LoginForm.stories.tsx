@@ -74,7 +74,13 @@ const never = () => new Promise<void>(() => {});
 
 const VALID = { email: "user@example.com", password: "password123" };
 
-// インタラクション専用の Story には tags: ["interaction", "!autodocs"] を付けている。
+// 振り分けの規則: play 関数があるものはテスト用。人間向けは args だけで作る。
+//
+// 例外を作らないので、Story ごとに「これは人にも見せるか」を判断する必要がない。
+// Docs ページでは play が走らないため、play で状態を作る Story を人間向けに置くと
+// 空のフォームが並ぶ。この規則はその制約とも一致する（解説 3 章を参照）。
+//
+// テスト用には tags: ["interaction", "!autodocs"] を付けている。
 //
 //   interaction … 独自タグ。main.ts の tags で defaultFilterSelection: "exclude" を
 //                 指定してあるので、サイドバーのタグフィルタで既定は畳まれる。
@@ -98,6 +104,8 @@ export const Default: Story = {};
  * T1 / D4: 空のまま送信する。email と password の両方が不正なケースでもある。
  */
 export const ValidationErrors: Story = {
+  tags: ["interaction", "!autodocs"],
+  name: "T1・D4 空のまま送信すると両方にエラーが出る",
   play: async ({ canvas, userEvent, args, step }) => {
     await step("空のままログインボタンを押す", async () => {
       await userEvent.click(canvas.getByRole("button", { name: "ログイン" }));
@@ -210,6 +218,8 @@ export const RecoverFromError: Story = {
  * 「非同期処理の途中の状態」を Story として残せるのが、args で外側を差し替えられる利点。
  */
 export const Submitting: Story = {
+  tags: ["interaction", "!autodocs"],
+  name: "T3 送信中はフォームが操作できない",
   args: { onSubmit: fn(never) },
   play: async ({ canvas, userEvent, step }) => {
     await step("正しい値を入力して送信する", async () => {
@@ -263,6 +273,8 @@ export const SubmitSucceeds: Story = {
  * ケースを先に洗い出したことで見つかった不具合。
  */
 export const SubmitFailed: Story = {
+  tags: ["interaction", "!autodocs"],
+  name: "T5 送信に失敗するとエラーが表示される",
   args: {
     onSubmit: fn(async () => {
       throw new Error("network error");

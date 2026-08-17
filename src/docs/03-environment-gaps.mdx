@@ -128,7 +128,40 @@ test("S1 空のまま送信するとエラーが出る", async () => {
 ルールを全体で無効化すると、本当に空のテストも検出されなくなります。
 ここでは対象ファイルと関数名を限定しています。
 
-## 8. tags を共有定数から展開すると黙って無視される
+## 8. Docs ページでは play が走らない
+
+**症状**: play で状態を作った Story が、Docs ページでは初期表示のまま並ぶ。
+
+`ValidationErrors` や `Submitting` という名前の下に、`Default` と同じ空のフォームが表示されます。
+Docs ページの 5 つのプレビューを読み出すと、すべて同じでした。
+
+```
+[0] メールアドレス パスワード ログイン   ← Default
+[1] メールアドレス パスワード ログイン   ← Validation Errors
+[2] メールアドレス パスワード ログイン   ← Submitting
+[3] メールアドレス パスワード ログイン   ← Submit Failed
+```
+
+サイドバーから 1 つずつ開く Canvas では play が走り、意図した状態になります。
+Docs ページだけが違います。
+
+**`autoplay` で走らせると壊れます。** `parameters.docs.story.autoplay`（既定 `false`）を
+`true` にすると play は実行されますが、同じページの play が同時に走り、
+キー入力が互いに混ざります。3 回実行した結果です。
+
+```
+run 1  入力=["ruse@re@xeaxmapmlpel.ec.ocmom", "apsasswsowrodr1d21323"]
+run 2  入力=["eurser@@eexxaammppllee..ccoomm", "ppaasssswwoorrdd112233"]
+run 3  入力=["eurser@@eexxaammppllee..ccoomm", "ppaasssswwoorrdd112233"]
+```
+
+`user@example.com` が 2 本分、1 文字ずつ交互に入っています。実行ごとに結果も変わります。
+
+**対策**: このリポジトリでは、play がある Story をすべてテスト用として扱い、
+`!autodocs` で Docs ページから外しています。人間向けの Story は args だけで作るので、
+Docs ページには args どおりの状態が出ます（「4. 方式A Story に書く」を参照）。
+
+## 9. tags を共有定数から展開すると黙って無視される
 
 **症状**: タグを付けたのにサイドバーの扱いが変わらない。
 型エラーも実行時エラーも出ない。
